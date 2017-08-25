@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -87,10 +86,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 				int ret = fc.showSaveDialog(this);
 				if (ret == JFileChooser.APPROVE_OPTION) {
 					File sel = fc.getSelectedFile();
-					String selName = sel.toString();
-					if (!selName.contains(".")
-							|| !selName.substring(0, selName.lastIndexOf('.')).equalsIgnoreCase("png"))
-						sel = new File(selName + ".png");
+					String selName = sel.getName();
+					if (!selName.contains(".") || !selName.substring(selName.lastIndexOf(".") + 1, selName.length())
+							.equalsIgnoreCase("png")) {
+						selName += ".png";
+						sel = new File(sel.getParentFile().getPath() + "/" + selName);
+					}
 					try {
 						System.out.println("writing image to " + sel);
 						ImageIO.write(textbox, "png", sel);
@@ -137,7 +138,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 	public static BufferedImage drawTextbox(String face, String text) {
 		BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = ret.getGraphics();
-		drawNineSlice(g, Resources.getBox(), 0, 0, 608, 128);
+		g.drawImage(Resources.getBox(), 0, 0, null);
 		g.setFont(Resources.getFont());
 		g.setColor(Color.WHITE);
 		drawString(g, text, 20, 10);
@@ -151,29 +152,6 @@ public class MakerPanel extends JPanel implements ActionListener {
 			y += lineSpace;
 			g.drawString(line, x, y);
 		}
-	}
-
-	public static void drawNineSlice(Graphics g, Image img, int x, int y, int w, int h) {
-		final int iw = img.getWidth(null), ih = img.getHeight(null);
-		final int sw = iw / 3, sh = ih / 3;
-		// top left
-		g.drawImage(img, x, y, x + sw, y + sh, 0, 0, sw, sh, null);
-		// top middle
-		g.drawImage(img, x + sw, y, x + (w - sw), y + sh, sw, 0, sw * 2, sh, null);
-		// top right
-		g.drawImage(img, x + (w - sw), y, x + w, y + sh, sw * 2, 0, sw * 3, sh, null);
-		// center left
-		g.drawImage(img, x, y + sh, x + sw, y + (h - sh), 0, sh, sw, sh * 2, null);
-		// center middle
-		g.drawImage(img, x + sw, y + sh, x + (w - sw), y + (h - sh), sw, sh, sw * 2, sh * 2, null);
-		// center right
-		g.drawImage(img, x + (w - sw), y + sh, x + w, y + (h - sh), sw * 2, sh, sw * 3, sh * 2, null);
-		// bottom left
-		g.drawImage(img, x, y + (h - sh), x + sw, y + h, 0, sh * 2, sw, sh * 3, null);
-		// bottom middle
-		g.drawImage(img, x + sw, y + (h - sh), x + (w - sw), y + h, sw, sh * 2, sw * 2, sh * 3, null);
-		// bottom right
-		g.drawImage(img, x + (w - sw), y + (h - sh), x + w, y + h, sw * 2, sh * 2, sw * 3, sh * 3, null);
 	}
 
 	class FacesComboBoxRenderer extends JLabel implements ListCellRenderer<String> {
