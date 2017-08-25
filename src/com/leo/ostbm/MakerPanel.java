@@ -30,6 +30,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 
 	private JComboBox<String> faceSelect;
+	private JButton customFaceButton;
 	private JTextArea textArea;
 	private JButton makeTextboxButton;
 
@@ -43,9 +44,15 @@ public class MakerPanel extends JPanel implements ActionListener {
 		FacesComboBoxRenderer renderer = new FacesComboBoxRenderer();
 		faceSelect.setRenderer(renderer);
 		faceSelectPanel.add(faceSelect);
+		customFaceButton = new JButton("...");
+		customFaceButton.addActionListener(this);
+		faceSelectPanel.add(customFaceButton);
 		add(faceSelectPanel, BorderLayout.PAGE_START);
 		textArea = new JTextArea();
 		textArea.setFont(Resources.getFont());
+		textArea.setBackground(Color.decode("0x180C1E"));
+		textArea.setForeground(Color.WHITE);
+		textArea.setCaretColor(Color.WHITE);
 		add(textArea, BorderLayout.CENTER);
 		makeTextboxButton = new JButton("Make a Textbox!");
 		makeTextboxButton.addActionListener(this);
@@ -54,42 +61,74 @@ public class MakerPanel extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (!(e.getSource() == makeTextboxButton))
-			return;
-		String text = textArea.getText().trim();
-		if (text.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Please enter some text.", "Text cannot be blank!",
-					JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		if (text.split("\n").length > 4) {
-			JOptionPane.showMessageDialog(this, "Only 4 lines per textbox, please!", "Too many lines!",
-					JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		BufferedImage textbox = drawTextbox(faceSelect.getItemAt(faceSelect.getSelectedIndex()), text);
-		int result = JOptionPane.showOptionDialog(this, new PreviewPanel(textbox), "Textbox preview", 0,
-				JOptionPane.PLAIN_MESSAGE, null, new String[] { "Save" }, "Save");
-		if (result == 0) {
+		Object src = e.getSource();
+		if (src == makeTextboxButton) {
+			String text = textArea.getText().trim();
+			if (text.isEmpty()) {
+				JOptionPane.showMessageDialog(this, "Please enter some text.", "Text cannot be blank!",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			if (text.split("\n").length > 4) {
+				JOptionPane.showMessageDialog(this, "Only 4 lines per textbox, please!", "Too many lines!",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			BufferedImage textbox = drawTextbox(faceSelect.getItemAt(faceSelect.getSelectedIndex()), text);
+			int result = JOptionPane.showOptionDialog(this, new PreviewPanel(textbox), "Textbox preview", 0,
+					JOptionPane.PLAIN_MESSAGE, null, new String[] { "Save" }, "Save");
+			if (result == 0) {
+				JFileChooser fc = new JFileChooser();
+				fc.setMultiSelectionEnabled(false);
+				fc.setAcceptAllFileFilterUsed(false);
+				fc.setDialogTitle("Save textbox image");
+				fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
+				fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
+				int ret = fc.showSaveDialog(this);
+				if (ret == JFileChooser.APPROVE_OPTION) {
+					File sel = fc.getSelectedFile();
+					String selName = sel.toString();
+					if (!selName.contains(".")
+							|| !selName.substring(0, selName.lastIndexOf('.')).equalsIgnoreCase("png"))
+						sel = new File(selName + ".png");
+					try {
+						System.out.println("writing image to " + sel);
+						ImageIO.write(textbox, "png", sel);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
+								"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}
+		} else if (src == customFaceButton) {
 			JFileChooser fc = new JFileChooser();
-			fc.setMultiSelectionEnabled(false);
+			fc.setMultiSelectionEnabled(true);
 			fc.setAcceptAllFileFilterUsed(false);
-			fc.setDialogTitle("Save textbox image");
+			fc.setDialogTitle("Open face image(s)");
 			fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
 			fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-			int ret = fc.showSaveDialog(this);
+			int ret = fc.showOpenDialog(this);
 			if (ret == JFileChooser.APPROVE_OPTION) {
-				File sel = fc.getSelectedFile();
-				String selName = sel.toString();
-				if (!selName.contains(".") || !selName.substring(0, selName.lastIndexOf('.')).equalsIgnoreCase("png"))
-					sel = new File(selName + ".png");
-				try {
-					System.out.println("writing image to " + sel);
-					ImageIO.write(textbox, "png", sel);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-					JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
-							"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
+				File[] sels = fc.getSelectedFiles();
+				for (File sel : sels) {
+					String faceName = sel.getName();
+					faceName = faceName.substring(0, faceName.lastIndexOf('.'));
+					try {
+						BufferedImage image = ImageIO.read(sel);
+						if (image.getWidth() != 96 || image.getHeight() != 96) {
+							JOptionPane.showMessageDialog(this, "Face must be 96 by 96!", "Bad face dimensions!",
+									JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						Resources.addFace(faceName, image);
+						faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
+						faceSelect.setSelectedIndex(faceSelect.getModel().getSize() - 1);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(this, "An exception occured while loading the face:\n" + e1,
+								"Couldn't load face!", JOptionPane.ERROR_MESSAGE);
+					}
 				}
 			}
 		}

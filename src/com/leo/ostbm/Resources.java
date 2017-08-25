@@ -2,6 +2,7 @@ package com.leo.ostbm;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -29,18 +30,14 @@ public class Resources {
 	public static void initImages() throws IOException, URISyntaxException {
 		box = ImageIO.read(Resources.class.getResourceAsStream("/box.png"));
 		faces = new HashMap<>();
+		faceIcons = new HashMap<>();
 		File facesFolder = new File(Resources.class.getResource("/faces").toURI().getPath());
-		for (File face : facesFolder.listFiles()) {
-			String faceName = face.getName();
-			faceName = faceName.substring(0, faceName.lastIndexOf('.'));
-			faces.put(faceName, ImageIO.read(face));
-		}
+		for (File face : facesFolder.listFiles())
+			addFace(face);
 		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-		faceIcons = new HashMap<>();
-		for (Map.Entry<String, BufferedImage> entry : faces.entrySet()) {
-			faceIcons.put(entry.getKey(), new ImageIcon(entry.getValue()));
-		}
+		faceIcons = faceIcons.entrySet().stream().sorted(Map.Entry.comparingByKey())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 	}
 
 	public static Font getFont() {
@@ -57,6 +54,29 @@ public class Resources {
 
 	public static BufferedImage getFace(String name) {
 		return faces.get(name);
+	}
+
+	public static void addFace(File face) throws IOException {
+		String faceName = face.getName();
+		faceName = faceName.substring(0, faceName.lastIndexOf('.'));
+		BufferedImage image = ImageIO.read(face);
+		addFace(faceName, image);
+	}
+
+	public static void addFace(String name, BufferedImage face) {
+		name = name.toLowerCase().replace(' ', '_');
+		faces.put(name, face);
+		addFaceIcon(name);
+	}
+
+	private static void addFaceIcon(String face) {
+		if (!faces.containsKey(face))
+			return;
+		final int smolSize = 48;
+		BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
+		Graphics g = imageSmol.getGraphics();
+		g.drawImage(faces.get(face), 0, 0, smolSize, smolSize, null);
+		faceIcons.put(face, new ImageIcon(imageSmol));
 	}
 
 	public static ImageIcon getFaceIcon(String name) {
