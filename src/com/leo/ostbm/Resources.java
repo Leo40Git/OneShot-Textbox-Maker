@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 
 public class Resources {
 
@@ -36,7 +37,12 @@ public class Resources {
 		faces = new HashMap<>();
 		faceIcons = new HashMap<>();
 		addFace(FACE_BLANK, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
-		File facesFolder = new File(Resources.class.getResource("/faces").toURI().getPath());
+		File facesFolder = new File("faces");
+		if (!facesFolder.exists()) {
+			JOptionPane.showMessageDialog(null,
+					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder next to the application that contains the faces.",
+					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
+		}
 		for (File face : facesFolder.listFiles())
 			addFace(face);
 		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
