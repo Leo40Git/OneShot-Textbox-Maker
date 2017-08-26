@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -88,7 +89,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 		textArea.setBackground(COLOR_TEXTBOX);
 		textArea.setForeground(Color.WHITE);
 		textArea.setCaretColor(Color.WHITE);
-		add(textArea, BorderLayout.CENTER);
+		add(new JScrollPane(textArea), BorderLayout.CENTER);
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BorderLayout());
 		JPanel boxIndexPanel = new JPanel();
