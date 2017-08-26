@@ -11,8 +11,10 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -28,6 +30,9 @@ public class MakerPanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
 
+	public static final Color COLOR_TEXTBOX = Color.decode("0x180C1E");
+	public static final Color COLOR_TEXTBOX_B = COLOR_TEXTBOX.brighter().brighter();
+
 	private JComboBox<String> faceSelect;
 	private JButton customFaceButton;
 	private JTextArea textArea;
@@ -37,9 +42,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 		setLayout(new BorderLayout());
 		JPanel faceSelectPanel = new JPanel();
 		faceSelectPanel.setLayout(new BoxLayout(faceSelectPanel, BoxLayout.LINE_AXIS));
+		faceSelectPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		faceSelectPanel.add(new JLabel("Face: "));
 		faceSelect = new JComboBox<String>();
 		faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
+		faceSelect.setBackground(COLOR_TEXTBOX);
+		faceSelect.setForeground(Color.WHITE);
 		FacesComboBoxRenderer renderer = new FacesComboBoxRenderer();
 		faceSelect.setRenderer(renderer);
 		faceSelectPanel.add(faceSelect);
@@ -49,7 +57,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 		add(faceSelectPanel, BorderLayout.PAGE_START);
 		textArea = new JTextArea();
 		textArea.setFont(Resources.getFont());
-		textArea.setBackground(Color.decode("0x180C1E"));
+		textArea.setBackground(COLOR_TEXTBOX);
 		textArea.setForeground(Color.WHITE);
 		textArea.setCaretColor(Color.WHITE);
 		add(textArea, BorderLayout.CENTER);
@@ -139,10 +147,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 		BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = ret.getGraphics();
 		g.drawImage(Resources.getBox(), 0, 0, null);
+		BufferedImage faceImage = Resources.getFace(face);
+		if (faceImage != null)
+			g.drawImage(faceImage, 496, 16, null);
 		g.setFont(Resources.getFont());
 		g.setColor(Color.WHITE);
 		drawString(g, text, 20, 10);
-		g.drawImage(Resources.getFace(face), 496, 16, null);
 		return ret;
 	}
 
@@ -167,14 +177,14 @@ public class MakerPanel extends JPanel implements ActionListener {
 		@Override
 		public Component getListCellRendererComponent(JList<? extends String> list, String value, int index,
 				boolean isSelected, boolean cellHasFocus) {
-			if (isSelected) {
-				setBackground(list.getSelectionBackground());
-				setForeground(list.getSelectionForeground());
-			} else {
-				setBackground(list.getBackground());
-				setForeground(list.getForeground());
-			}
-			setIcon(Resources.getFaceIcon(value));
+			if (isSelected)
+				setBackground(COLOR_TEXTBOX_B);
+			else
+				setBackground(COLOR_TEXTBOX);
+			setForeground(Color.WHITE);
+			ImageIcon faceIcon = Resources.getFaceIcon(value);
+			if (faceIcon != null)
+				setIcon(faceIcon);
 			setText(value);
 			return this;
 		}

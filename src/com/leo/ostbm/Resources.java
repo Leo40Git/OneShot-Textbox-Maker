@@ -17,6 +17,8 @@ import javax.swing.ImageIcon;
 
 public class Resources {
 
+	public static final String FACE_BLANK = "(none)";
+
 	private static Map<String, BufferedImage> faces;
 	private static Map<String, ImageIcon> faceIcons;
 	private static BufferedImage box;
@@ -31,6 +33,7 @@ public class Resources {
 		box = ImageIO.read(Resources.class.getResourceAsStream("/box.png"));
 		faces = new HashMap<>();
 		faceIcons = new HashMap<>();
+		addFace(FACE_BLANK, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
 		File facesFolder = new File(Resources.class.getResource("/faces").toURI().getPath());
 		for (File face : facesFolder.listFiles())
 			addFace(face);
@@ -64,7 +67,8 @@ public class Resources {
 	}
 
 	public static void addFace(String name, BufferedImage face) {
-		name = name.toLowerCase().replace(' ', '_');
+		if (face.getWidth() != 96 || face.getHeight() != 96)
+			throw new IllegalArgumentException("face must be 96 in width and 96 in height!");
 		faces.put(name, face);
 		addFaceIcon(name);
 	}
