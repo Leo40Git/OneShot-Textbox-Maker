@@ -222,13 +222,14 @@ public class MakerPanel extends JPanel implements ActionListener {
 				Textbox b = boxes.get(i);
 				String text = b.text.trim();
 				if (text.isEmpty()) {
-					JOptionPane.showMessageDialog(this, "Textbox " + i + " is blank!\nPlease write something there.",
-							"Text cannot be blank!", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(this,
+							"Textbox " + (i + 1) + " is blank!\nPlease write something there.", "Text cannot be blank!",
+							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				if (text.split("\n").length > 4) {
 					JOptionPane.showMessageDialog(this,
-							"Textbox " + i + " has too many lines!\nOnly 4 lines per textbox, please.",
+							"Textbox " + (i + 1) + " has too many lines!\nOnly 4 lines per textbox, please.",
 							"Too many lines!", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
@@ -314,9 +315,11 @@ public class MakerPanel extends JPanel implements ActionListener {
 				setBackground(COLOR_TEXTBOX);
 			setForeground(Color.WHITE);
 			ImageIcon faceIcon = Resources.getFaceIcon(value);
-			if (faceIcon != null)
+			if (faceIcon == null)
+				setIcon(Resources.getFaceIcon(Resources.FACE_BLANK));
+			else
 				setIcon(faceIcon);
-			setText("<html>" + value + "</html>");
+			setText(value);
 			return this;
 		}
 

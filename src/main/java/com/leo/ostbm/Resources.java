@@ -83,7 +83,7 @@ public class Resources {
 
 	public static void addFace(String name, BufferedImage face) {
 		if (face.getWidth() != 96 || face.getHeight() != 96)
-			throw new IllegalArgumentException("face must be 96 in width and 96 in height!");
+			throw new IllegalArgumentException("Face dimensions must be 96 by 96!");
 		faces.put(name, face);
 		addFaceIcon(name);
 	}
