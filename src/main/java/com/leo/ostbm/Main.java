@@ -10,7 +10,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 public class Main {
 
-	public static final String VERSION = "1.2.2";
+	public static final String VERSION = "1.2.3";
 
 	private static JFrame frame;
 

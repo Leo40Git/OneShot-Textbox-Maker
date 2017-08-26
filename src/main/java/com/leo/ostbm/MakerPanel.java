@@ -3,6 +3,7 @@ package com.leo.ostbm;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -20,6 +21,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -41,6 +43,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 	public static final String A_NEXT_BOX = "nextBox";
 	public static final String A_ADD_BOX = "addBox";
 	public static final String A_MAKE_TEXTBOX = "makeTextbox";
+	public static final String A_SAVE_TEXTBOX = "saveTextbox";
 
 	class Textbox {
 		public String face;
@@ -235,33 +238,18 @@ public class MakerPanel extends JPanel implements ActionListener {
 				}
 				drawTextbox(big, b.face, text, 0, 130 * i, i < boxes.size() - 1);
 			}
-			int result = JOptionPane.showOptionDialog(this, new PreviewPanel(boxesImage), "Textbox(es) preview", 0,
-					JOptionPane.PLAIN_MESSAGE, null, new String[] { "Save" }, "Save");
-			if (result == 0) {
-				fc = new JFileChooser();
-				fc.setMultiSelectionEnabled(false);
-				fc.setAcceptAllFileFilterUsed(false);
-				fc.setDialogTitle("Save textbox image");
-				fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
-				fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-				ret = fc.showSaveDialog(this);
-				if (ret == JFileChooser.APPROVE_OPTION) {
-					File sel = fc.getSelectedFile();
-					String selName = sel.getName();
-					if (!selName.contains(".") || !selName.substring(selName.lastIndexOf(".") + 1, selName.length())
-							.equalsIgnoreCase("png")) {
-						selName += ".png";
-						sel = new File(sel.getParentFile().getPath() + "/" + selName);
-					}
-					try {
-						ImageIO.write(boxesImage, "png", sel);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-						JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
-								"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
-					}
-				}
-			}
+			JFrame previewFrame = new JFrame();
+			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			final Dimension size = new Dimension(636, 128 * 5 + 2 * 4 + 40);
+			previewFrame.setPreferredSize(size);
+			previewFrame.setMaximumSize(size);
+			previewFrame.setMinimumSize(size);
+			previewFrame.setResizable(false);
+			previewFrame.add(new PreviewPanel(boxesImage));
+			previewFrame.pack();
+			previewFrame.setLocationRelativeTo(null);
+			previewFrame.setTitle("Textbox(es) preview");
+			previewFrame.setVisible(true);
 			break;
 		default:
 			System.out.println("Undefined action: " + a);
