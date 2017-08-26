@@ -22,13 +22,15 @@ public class Resources {
 
 	private static Map<String, BufferedImage> faces;
 	private static Map<String, ImageIcon> faceIcons;
+	private static Map<String, File> faceFiles;
 	private static BufferedImage box;
 	private static BufferedImage arrow;
-	private static Font font;
+	private static Font fontBase;
+	private static Font fontBox;
 
-	public static void initFont() throws FontFormatException, IOException {
-		font = Font.createFont(Font.TRUETYPE_FONT, Resources.class.getResourceAsStream("/font.ttf"));
-		font = font.deriveFont(Font.PLAIN, 20);
+	public static void initFonts() throws FontFormatException, IOException {
+		fontBase = Font.createFont(Font.TRUETYPE_FONT, Resources.class.getResourceAsStream("/font.ttf"));
+		fontBox = fontBase.deriveFont(Font.PLAIN, 20);
 	}
 
 	public static void initImages() throws IOException, URISyntaxException {
@@ -36,6 +38,7 @@ public class Resources {
 		arrow = ImageIO.read(Resources.class.getResourceAsStream("/arrow.png"));
 		faces = new HashMap<>();
 		faceIcons = new HashMap<>();
+		faceFiles = new HashMap<>();
 		addFace(FACE_BLANK, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
 		File facesFolder = new File("faces");
 		if (!facesFolder.exists()) {
@@ -43,16 +46,15 @@ public class Resources {
 					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder next to the application that contains the faces.",
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
 		}
-		for (File face : facesFolder.listFiles())
-			addFace(face);
+		addFaces(facesFolder);
 		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 		faceIcons = faceIcons.entrySet().stream().sorted(Map.Entry.comparingByKey())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 	}
 
-	public static Font getFont() {
-		return font;
+	public static Font getFontBox() {
+		return fontBox;
 	}
 
 	public static BufferedImage getBox() {
@@ -79,6 +81,7 @@ public class Resources {
 		faceName = faceName.substring(0, faceName.lastIndexOf('.'));
 		BufferedImage image = ImageIO.read(face);
 		addFace(faceName, image);
+		faceFiles.put(faceName, face);
 	}
 
 	public static void addFace(String name, BufferedImage face) {
@@ -86,6 +89,23 @@ public class Resources {
 			throw new IllegalArgumentException("Face dimensions must be 96 by 96!");
 		faces.put(name, face);
 		addFaceIcon(name);
+	}
+
+	public static void addFace(File file, String name, BufferedImage face) {
+		addFace(name, face);
+		faceFiles.put(name, file);
+	}
+
+	public static void addFaces(File dir) throws IOException {
+		if (dir.isFile()) {
+			addFace(dir);
+			return;
+		}
+		for (File face : dir.listFiles())
+			if (face.isDirectory())
+				addFaces(face);
+			else
+				addFace(face);
 	}
 
 	private static void addFaceIcon(String face) {
@@ -100,6 +120,10 @@ public class Resources {
 
 	public static ImageIcon getFaceIcon(String name) {
 		return faceIcons.get(name);
+	}
+
+	public static File getFaceFile(String face) {
+		return faceFiles.get(face);
 	}
 
 }

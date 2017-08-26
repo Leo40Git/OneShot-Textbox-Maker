@@ -36,6 +36,7 @@ public class PreviewPanel extends JPanel implements ActionListener {
 		saveButton = new JButton("Save");
 		saveButton.addActionListener(this);
 		saveButton.setActionCommand(A_SAVE_TEXTBOX);
+		saveButton.setToolTipText("Save this textbox (or these textboxes) as an image");
 		add(saveButton, BorderLayout.PAGE_END);
 	}
 

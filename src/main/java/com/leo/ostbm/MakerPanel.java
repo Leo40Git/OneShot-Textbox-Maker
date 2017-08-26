@@ -78,14 +78,16 @@ public class MakerPanel extends JPanel implements ActionListener {
 		faceSelect.setForeground(Color.WHITE);
 		FacesComboBoxRenderer renderer = new FacesComboBoxRenderer();
 		faceSelect.setRenderer(renderer);
+		faceSelect.setToolTipText("Select a face to add to the textbox");
 		faceSelectPanel.add(faceSelect);
 		customFaceButton = new JButton("...");
 		customFaceButton.addActionListener(this);
 		customFaceButton.setActionCommand(A_CUSTOM_FACE);
+		customFaceButton.setToolTipText("Add a custom face image");
 		faceSelectPanel.add(customFaceButton);
 		add(faceSelectPanel, BorderLayout.PAGE_START);
 		textArea = new JTextArea();
-		textArea.setFont(Resources.getFont());
+		textArea.setFont(Resources.getFontBox());
 		textArea.setBackground(COLOR_TEXTBOX);
 		textArea.setForeground(Color.WHITE);
 		textArea.setCaretColor(Color.WHITE);
@@ -96,10 +98,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 		removeBoxButton = new JButton("-");
 		removeBoxButton.addActionListener(this);
 		removeBoxButton.setActionCommand(A_REMOVE_BOX);
+		removeBoxButton.setToolTipText("Remove a textbox");
 		boxIndexPanel.add(removeBoxButton);
 		prevBoxButton = new JButton("<");
 		prevBoxButton.addActionListener(this);
 		prevBoxButton.setActionCommand(A_PREV_BOX);
+		prevBoxButton.setToolTipText("Go to previous textbox");
 		boxIndexPanel.add(prevBoxButton);
 		boxIndexLabel = new JLabel();
 		updateBoxLabel();
@@ -107,10 +111,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 		nextBoxButton = new JButton(">");
 		nextBoxButton.addActionListener(this);
 		nextBoxButton.setActionCommand(A_NEXT_BOX);
+		nextBoxButton.setToolTipText("Go to next textbox");
 		boxIndexPanel.add(nextBoxButton);
 		addBoxButton = new JButton("+");
 		addBoxButton.addActionListener(this);
 		addBoxButton.setActionCommand(A_ADD_BOX);
+		addBoxButton.setToolTipText("Add a textbox");
 		boxIndexPanel.add(addBoxButton);
 		bottomPanel.add(boxIndexPanel, BorderLayout.PAGE_START);
 		makeTextboxButton = new JButton("Make a Textbox!");
@@ -157,7 +163,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 									JOptionPane.ERROR_MESSAGE);
 							return;
 						}
-						Resources.addFace(faceName, image);
+						Resources.addFace(sel, faceName, image);
 						faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
 						faceSelect.setSelectedIndex(faceSelect.getModel().getSize() - 1);
 					} catch (IOException e1) {
@@ -174,6 +180,13 @@ public class MakerPanel extends JPanel implements ActionListener {
 				JOptionPane.showMessageDialog(this, "You cannot remove the first textbox!",
 						"Can't remove first textbox!", JOptionPane.ERROR_MESSAGE);
 				break;
+			}
+			if (!boxes.get(currentBox).text.trim().isEmpty()) {
+				int result = JOptionPane.showConfirmDialog(this,
+						"Are you sure you want to delete textbox " + (currentBox + 1) + "?", "Confirm deleting textbox",
+						JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				if (result != JOptionPane.YES_OPTION)
+					break;
 			}
 			boxes.remove(currentBox);
 			currentBox--;
@@ -272,7 +285,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			g.drawImage(faceImage, x + 496, y + 16, null);
 		if (drawArrow)
 			g.drawImage(Resources.getArrow(), x + 299, y + 118, null);
-		g.setFont(Resources.getFont());
+		g.setFont(Resources.getFontBox());
 		g.setColor(Color.WHITE);
 		drawString(g, text, x + 20, y + 10);
 	}
@@ -302,13 +315,17 @@ public class MakerPanel extends JPanel implements ActionListener {
 				setBackground(COLOR_TEXTBOX_B);
 			else
 				setBackground(COLOR_TEXTBOX);
-			setForeground(Color.WHITE);
 			ImageIcon faceIcon = Resources.getFaceIcon(value);
 			if (faceIcon == null)
 				setIcon(Resources.getFaceIcon(Resources.FACE_BLANK));
 			else
 				setIcon(faceIcon);
-			setText(value);
+			String text = "<html><font color=white>" + value;
+			File faceFile = Resources.getFaceFile(value);
+			if (faceFile != null)
+				text += "</font><br><font color=gray><i>" + faceFile.getPath() + "</i>";
+			text += "</font></html>";
+			setText(text);
 			return this;
 		}
 
