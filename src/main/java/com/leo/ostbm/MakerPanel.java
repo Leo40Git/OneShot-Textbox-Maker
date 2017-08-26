@@ -170,8 +170,6 @@ public class MakerPanel extends JPanel implements ActionListener {
 							return;
 						}
 						Resources.addFace(sel, faceName, image);
-						faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
-						faceSelect.setSelectedIndex(faceSelect.getModel().getSize() - 1);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 						JOptionPane.showMessageDialog(this, "An exception occured while loading the face:\n" + e1,
@@ -179,6 +177,9 @@ public class MakerPanel extends JPanel implements ActionListener {
 					}
 				}
 			}
+			String[] faces = Resources.getFaces();
+			faceSelect.setModel(new DefaultComboBoxModel<>(faces));
+			faceSelect.setSelectedIndex(faces.length - 1);
 			break;
 		case A_REMOVE_BOX:
 			updateCurrentBox();

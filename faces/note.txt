@@ -1,0 +1,4 @@
+To add faces, simply add the face image to this folder, or any subfolder inside this folder!
+
+The "original" folder contains faces from the game itself. These belong to NightMargin, GIR and Eliza.
+The "discord" folder contains faces from the OneShot Discord server. It seems whoever made them left the server...

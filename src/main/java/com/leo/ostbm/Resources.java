@@ -47,10 +47,7 @@ public class Resources {
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
 		}
 		addFaces(facesFolder);
-		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-		faceIcons = faceIcons.entrySet().stream().sorted(Map.Entry.comparingByKey())
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+		sortFaces();
 	}
 
 	public static Font getFontBox() {
@@ -65,35 +62,42 @@ public class Resources {
 		return arrow;
 	}
 
+	static final String[] DUMMY_STRING_ARRAY = new String[] {};
+
 	public static String[] getFaces() {
-		return faces.keySet().toArray(new String[] {});
+		return faces.keySet().toArray(DUMMY_STRING_ARRAY);
 	}
 
 	public static BufferedImage getFace(String name) {
 		return faces.get(name);
 	}
 
-	public static void addFace(File face) throws IOException {
+	public static String addFace(File face) throws IOException {
 		String faceName = face.getName();
 		if (!faceName.contains(".")
 				|| !faceName.substring(faceName.lastIndexOf(".") + 1, faceName.length()).equalsIgnoreCase("png"))
-			return;
+			return null;
 		faceName = faceName.substring(0, faceName.lastIndexOf('.'));
 		BufferedImage image = ImageIO.read(face);
-		addFace(faceName, image);
+		faceName = addFace(faceName, image);
 		faceFiles.put(faceName, face);
+		return faceName;
 	}
 
-	public static void addFace(String name, BufferedImage face) {
+	public static String addFace(String name, BufferedImage face) {
 		if (face.getWidth() != 96 || face.getHeight() != 96)
 			throw new IllegalArgumentException("Face dimensions must be 96 by 96!");
+		while (faces.containsKey(name))
+			name += "-";
 		faces.put(name, face);
 		addFaceIcon(name);
+		return name;
 	}
 
-	public static void addFace(File file, String name, BufferedImage face) {
-		addFace(name, face);
+	public static String addFace(File file, String name, BufferedImage face) {
+		name = addFace(name, face);
 		faceFiles.put(name, file);
+		return name;
 	}
 
 	public static void addFaces(File dir) throws IOException {
@@ -104,8 +108,15 @@ public class Resources {
 		for (File face : dir.listFiles())
 			if (face.isDirectory())
 				addFaces(face);
-			else
-				addFace(face);
+			else {
+				try {
+					addFace(face);
+				} catch (Exception e) {
+					System.err.println("Ignoring exception from trying to load \"" + face.getName()
+							+ "\" from directory \"" + dir.getPath() + "\":");
+					e.printStackTrace();
+				}
+			}
 	}
 
 	private static void addFaceIcon(String face) {
@@ -124,6 +135,15 @@ public class Resources {
 
 	public static File getFaceFile(String face) {
 		return faceFiles.get(face);
+	}
+	
+	public static void sortFaces() {
+		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+		faceIcons = faceIcons.entrySet().stream().sorted(Map.Entry.comparingByKey())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+		faceFiles = faceFiles.entrySet().stream().sorted(Map.Entry.comparingByKey())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 	}
 
 }
