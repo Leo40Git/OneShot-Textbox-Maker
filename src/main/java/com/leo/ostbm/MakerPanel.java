@@ -136,6 +136,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 		box.text = textArea.getText();
 	}
 
+	private void setCurrentBox() {
+		Textbox box = boxes.get(currentBox);
+		faceSelect.setSelectedItem(box.face);
+		textArea.setText(box.text);
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String a = e.getActionCommand();
@@ -176,11 +182,6 @@ public class MakerPanel extends JPanel implements ActionListener {
 			break;
 		case A_REMOVE_BOX:
 			updateCurrentBox();
-			if (currentBox == 0) {
-				JOptionPane.showMessageDialog(this, "You cannot remove the first textbox!",
-						"Can't remove first textbox!", JOptionPane.ERROR_MESSAGE);
-				break;
-			}
 			if (!boxes.get(currentBox).text.trim().isEmpty()) {
 				int result = JOptionPane.showConfirmDialog(this,
 						"Are you sure you want to delete textbox " + (currentBox + 1) + "?", "Confirm deleting textbox",
@@ -188,14 +189,18 @@ public class MakerPanel extends JPanel implements ActionListener {
 				if (result != JOptionPane.YES_OPTION)
 					break;
 			}
-			boxes.remove(currentBox);
-			currentBox--;
+			if (boxes.size() == 0) {
+				box = boxes.get(currentBox);
+				box.face = Resources.FACE_BLANK;
+				box.text = "";
+			} else
+				boxes.remove(currentBox);
+			if (currentBox == boxes.size())
+				currentBox--;
 			if (currentBox < 0)
 				currentBox = 0;
 			updateBoxLabel();
-			box = boxes.get(currentBox);
-			faceSelect.setSelectedItem(box.face);
-			textArea.setText(box.text);
+			setCurrentBox();
 			break;
 		case A_PREV_BOX:
 			updateCurrentBox();
@@ -203,9 +208,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox < 0)
 				currentBox = 0;
 			updateBoxLabel();
-			box = boxes.get(currentBox);
-			faceSelect.setSelectedItem(box.face);
-			textArea.setText(box.text);
+			setCurrentBox();
 			break;
 		case A_NEXT_BOX:
 			updateCurrentBox();
@@ -213,9 +216,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox > boxes.size() - 1)
 				currentBox = boxes.size() - 1;
 			updateBoxLabel();
-			box = boxes.get(currentBox);
-			faceSelect.setSelectedItem(box.face);
-			textArea.setText(box.text);
+			setCurrentBox();
 			break;
 		case A_ADD_BOX:
 			updateCurrentBox();
@@ -227,8 +228,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox > boxes.size() - 1)
 				currentBox = boxes.size() - 1;
 			updateBoxLabel();
-			faceSelect.setSelectedItem(box.face);
-			textArea.setText(box.text);
+			setCurrentBox();
 			break;
 		case A_MAKE_TEXTBOX:
 			updateCurrentBox();
