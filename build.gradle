@@ -1,0 +1,14 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.1'
+}
+

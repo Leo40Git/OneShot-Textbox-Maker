@@ -316,7 +316,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			ImageIcon faceIcon = Resources.getFaceIcon(value);
 			if (faceIcon != null)
 				setIcon(faceIcon);
-			setText(value);
+			setText("<html>" + value + "</html>");
 			return this;
 		}
 

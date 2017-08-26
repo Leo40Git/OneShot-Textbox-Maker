@@ -73,6 +73,9 @@ public class Resources {
 
 	public static void addFace(File face) throws IOException {
 		String faceName = face.getName();
+		if (!faceName.contains(".")
+				|| !faceName.substring(faceName.lastIndexOf(".") + 1, faceName.length()).equalsIgnoreCase("png"))
+			return;
 		faceName = faceName.substring(0, faceName.lastIndexOf('.'));
 		BufferedImage image = ImageIO.read(face);
 		addFace(faceName, image);
