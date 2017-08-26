@@ -22,6 +22,7 @@ public class Resources {
 	private static Map<String, BufferedImage> faces;
 	private static Map<String, ImageIcon> faceIcons;
 	private static BufferedImage box;
+	private static BufferedImage arrow;
 	private static Font font;
 
 	public static void initFont() throws FontFormatException, IOException {
@@ -31,6 +32,7 @@ public class Resources {
 
 	public static void initImages() throws IOException, URISyntaxException {
 		box = ImageIO.read(Resources.class.getResourceAsStream("/box.png"));
+		arrow = ImageIO.read(Resources.class.getResourceAsStream("/arrow.png"));
 		faces = new HashMap<>();
 		faceIcons = new HashMap<>();
 		addFace(FACE_BLANK, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
@@ -49,6 +51,10 @@ public class Resources {
 
 	public static BufferedImage getBox() {
 		return box;
+	}
+
+	public static BufferedImage getArrow() {
+		return arrow;
 	}
 
 	public static String[] getFaces() {

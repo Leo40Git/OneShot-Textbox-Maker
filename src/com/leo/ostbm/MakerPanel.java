@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -33,12 +35,34 @@ public class MakerPanel extends JPanel implements ActionListener {
 	public static final Color COLOR_TEXTBOX = Color.decode("0x180C1E");
 	public static final Color COLOR_TEXTBOX_B = COLOR_TEXTBOX.brighter().brighter();
 
+	public static final String A_CUSTOM_FACE = "customFace";
+	public static final String A_REMOVE_BOX = "removeBox";
+	public static final String A_PREV_BOX = "prevBox";
+	public static final String A_NEXT_BOX = "nextBox";
+	public static final String A_ADD_BOX = "addBox";
+	public static final String A_MAKE_TEXTBOX = "makeTextbox";
+
+	class Textbox {
+		public String face;
+		public String text;
+	}
+
+	private int currentBox;
+	private List<Textbox> boxes;
 	private JComboBox<String> faceSelect;
 	private JButton customFaceButton;
 	private JTextArea textArea;
+	private JButton removeBoxButton;
+	private JButton prevBoxButton;
+	private JLabel boxIndexLabel;
+	private JButton nextBoxButton;
+	private JButton addBoxButton;
 	private JButton makeTextboxButton;
 
 	public MakerPanel() {
+		currentBox = 0;
+		boxes = new LinkedList<>();
+		boxes.add(new Textbox());
 		setLayout(new BorderLayout());
 		JPanel faceSelectPanel = new JPanel();
 		faceSelectPanel.setLayout(new BoxLayout(faceSelectPanel, BoxLayout.LINE_AXIS));
@@ -53,6 +77,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 		faceSelectPanel.add(faceSelect);
 		customFaceButton = new JButton("...");
 		customFaceButton.addActionListener(this);
+		customFaceButton.setActionCommand(A_CUSTOM_FACE);
 		faceSelectPanel.add(customFaceButton);
 		add(faceSelectPanel, BorderLayout.PAGE_START);
 		textArea = new JTextArea();
@@ -61,63 +86,61 @@ public class MakerPanel extends JPanel implements ActionListener {
 		textArea.setForeground(Color.WHITE);
 		textArea.setCaretColor(Color.WHITE);
 		add(textArea, BorderLayout.CENTER);
+		JPanel bottomPanel = new JPanel();
+		bottomPanel.setLayout(new BorderLayout());
+		JPanel boxIndexPanel = new JPanel();
+		removeBoxButton = new JButton("-");
+		removeBoxButton.addActionListener(this);
+		removeBoxButton.setActionCommand(A_REMOVE_BOX);
+		boxIndexPanel.add(removeBoxButton);
+		prevBoxButton = new JButton("<");
+		prevBoxButton.addActionListener(this);
+		prevBoxButton.setActionCommand(A_PREV_BOX);
+		boxIndexPanel.add(prevBoxButton);
+		boxIndexLabel = new JLabel();
+		updateBoxLabel();
+		boxIndexPanel.add(boxIndexLabel);
+		nextBoxButton = new JButton(">");
+		nextBoxButton.addActionListener(this);
+		nextBoxButton.setActionCommand(A_NEXT_BOX);
+		boxIndexPanel.add(nextBoxButton);
+		addBoxButton = new JButton("+");
+		addBoxButton.addActionListener(this);
+		addBoxButton.setActionCommand(A_ADD_BOX);
+		boxIndexPanel.add(addBoxButton);
+		bottomPanel.add(boxIndexPanel, BorderLayout.PAGE_START);
 		makeTextboxButton = new JButton("Make a Textbox!");
 		makeTextboxButton.addActionListener(this);
-		add(makeTextboxButton, BorderLayout.PAGE_END);
+		makeTextboxButton.setActionCommand(A_MAKE_TEXTBOX);
+		bottomPanel.add(makeTextboxButton, BorderLayout.PAGE_END);
+		add(bottomPanel, BorderLayout.PAGE_END);
+	}
+
+	private void updateBoxLabel() {
+		boxIndexLabel.setText((currentBox + 1) + " / " + boxes.size());
+	}
+
+	private void updateCurrentBox() {
+		Textbox box = boxes.get(currentBox);
+		box.face = faceSelect.getItemAt(faceSelect.getSelectedIndex());
+		box.text = textArea.getText();
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		Object src = e.getSource();
-		if (src == makeTextboxButton) {
-			String text = textArea.getText().trim();
-			if (text.isEmpty()) {
-				JOptionPane.showMessageDialog(this, "Please enter some text.", "Text cannot be blank!",
-						JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			if (text.split("\n").length > 4) {
-				JOptionPane.showMessageDialog(this, "Only 4 lines per textbox, please!", "Too many lines!",
-						JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			BufferedImage textbox = drawTextbox(faceSelect.getItemAt(faceSelect.getSelectedIndex()), text);
-			int result = JOptionPane.showOptionDialog(this, new PreviewPanel(textbox), "Textbox preview", 0,
-					JOptionPane.PLAIN_MESSAGE, null, new String[] { "Save" }, "Save");
-			if (result == 0) {
-				JFileChooser fc = new JFileChooser();
-				fc.setMultiSelectionEnabled(false);
-				fc.setAcceptAllFileFilterUsed(false);
-				fc.setDialogTitle("Save textbox image");
-				fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
-				fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-				int ret = fc.showSaveDialog(this);
-				if (ret == JFileChooser.APPROVE_OPTION) {
-					File sel = fc.getSelectedFile();
-					String selName = sel.getName();
-					if (!selName.contains(".") || !selName.substring(selName.lastIndexOf(".") + 1, selName.length())
-							.equalsIgnoreCase("png")) {
-						selName += ".png";
-						sel = new File(sel.getParentFile().getPath() + "/" + selName);
-					}
-					try {
-						System.out.println("writing image to " + sel);
-						ImageIO.write(textbox, "png", sel);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-						JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
-								"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
-					}
-				}
-			}
-		} else if (src == customFaceButton) {
-			JFileChooser fc = new JFileChooser();
+		String a = e.getActionCommand();
+		JFileChooser fc;
+		int ret;
+		Textbox box;
+		switch (a) {
+		case A_CUSTOM_FACE:
+			fc = new JFileChooser();
 			fc.setMultiSelectionEnabled(true);
 			fc.setAcceptAllFileFilterUsed(false);
 			fc.setDialogTitle("Open face image(s)");
 			fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
 			fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-			int ret = fc.showOpenDialog(this);
+			ret = fc.showOpenDialog(this);
 			if (ret == JFileChooser.APPROVE_OPTION) {
 				File[] sels = fc.getSelectedFiles();
 				for (File sel : sels) {
@@ -140,20 +163,128 @@ public class MakerPanel extends JPanel implements ActionListener {
 					}
 				}
 			}
+			break;
+		case A_REMOVE_BOX:
+			updateCurrentBox();
+			if (currentBox == 0) {
+				JOptionPane.showMessageDialog(this, "You cannot remove the first textbox!",
+						"Can't remove first textbox!", JOptionPane.ERROR_MESSAGE);
+				break;
+			}
+			boxes.remove(currentBox);
+			currentBox--;
+			if (currentBox < 0)
+				currentBox = 0;
+			updateBoxLabel();
+			box = boxes.get(currentBox);
+			faceSelect.setSelectedItem(box.face);
+			textArea.setText(box.text);
+			break;
+		case A_PREV_BOX:
+			updateCurrentBox();
+			currentBox--;
+			if (currentBox < 0)
+				currentBox = 0;
+			updateBoxLabel();
+			box = boxes.get(currentBox);
+			faceSelect.setSelectedItem(box.face);
+			textArea.setText(box.text);
+			break;
+		case A_NEXT_BOX:
+			updateCurrentBox();
+			currentBox++;
+			if (currentBox > boxes.size() - 1)
+				currentBox = boxes.size() - 1;
+			updateBoxLabel();
+			box = boxes.get(currentBox);
+			faceSelect.setSelectedItem(box.face);
+			textArea.setText(box.text);
+			break;
+		case A_ADD_BOX:
+			updateCurrentBox();
+			Textbox lastBox = boxes.get(boxes.size() - 1);
+			box = new Textbox();
+			box.face = lastBox.face;
+			boxes.add(box);
+			currentBox++;
+			if (currentBox > boxes.size() - 1)
+				currentBox = boxes.size() - 1;
+			updateBoxLabel();
+			faceSelect.setSelectedItem(box.face);
+			textArea.setText(box.text);
+			break;
+		case A_MAKE_TEXTBOX:
+			updateCurrentBox();
+			BufferedImage boxesImage = new BufferedImage(608, 128 * boxes.size() + 2 * (boxes.size() - 1),
+					BufferedImage.TYPE_4BYTE_ABGR);
+			Graphics big = boxesImage.getGraphics();
+			for (int i = 0; i < boxes.size(); i++) {
+				Textbox b = boxes.get(i);
+				String text = b.text.trim();
+				if (text.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Textbox " + i + " is blank!\nPlease write something there.",
+							"Text cannot be blank!", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				if (text.split("\n").length > 4) {
+					JOptionPane.showMessageDialog(this,
+							"Textbox " + i + " has too many lines!\nOnly 4 lines per textbox, please.",
+							"Too many lines!", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				drawTextbox(big, b.face, text, 0, 130 * i, i < boxes.size() - 1);
+			}
+			int result = JOptionPane.showOptionDialog(this, new PreviewPanel(boxesImage), "Textbox(es) preview", 0,
+					JOptionPane.PLAIN_MESSAGE, null, new String[] { "Save" }, "Save");
+			if (result == 0) {
+				fc = new JFileChooser();
+				fc.setMultiSelectionEnabled(false);
+				fc.setAcceptAllFileFilterUsed(false);
+				fc.setDialogTitle("Save textbox image");
+				fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
+				fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
+				ret = fc.showSaveDialog(this);
+				if (ret == JFileChooser.APPROVE_OPTION) {
+					File sel = fc.getSelectedFile();
+					String selName = sel.getName();
+					if (!selName.contains(".") || !selName.substring(selName.lastIndexOf(".") + 1, selName.length())
+							.equalsIgnoreCase("png")) {
+						selName += ".png";
+						sel = new File(sel.getParentFile().getPath() + "/" + selName);
+					}
+					try {
+						ImageIO.write(boxesImage, "png", sel);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
+								"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}
+			break;
+		default:
+			System.out.println("Undefined action: " + a);
+			break;
 		}
 	}
 
 	public static BufferedImage drawTextbox(String face, String text) {
 		BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = ret.getGraphics();
-		g.drawImage(Resources.getBox(), 0, 0, null);
+		drawTextbox(g, face, text, 0, 0, false);
+		return ret;
+	}
+
+	public static void drawTextbox(Graphics g, String face, String text, int x, int y, boolean drawArrow) {
+		g.drawImage(Resources.getBox(), x, y, null);
 		BufferedImage faceImage = Resources.getFace(face);
 		if (faceImage != null)
-			g.drawImage(faceImage, 496, 16, null);
+			g.drawImage(faceImage, x + 496, y + 16, null);
+		if (drawArrow)
+			g.drawImage(Resources.getArrow(), x + 299, y + 118, null);
 		g.setFont(Resources.getFont());
 		g.setColor(Color.WHITE);
-		drawString(g, text, 20, 10);
-		return ret;
+		drawString(g, text, x + 20, y + 10);
 	}
 
 	public static void drawString(Graphics g, String str, int x, int y) {
