@@ -80,6 +80,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 		faceSelect.setRenderer(renderer);
 		faceSelect.setToolTipText("Select a face to add to the textbox");
 		faceSelectPanel.add(faceSelect);
+		faceSelectPanel.add(new JLabel(" "));
 		customFaceButton = new JButton("...");
 		customFaceButton.addActionListener(this);
 		customFaceButton.setActionCommand(A_CUSTOM_FACE);
@@ -190,7 +191,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 				if (result != JOptionPane.YES_OPTION)
 					break;
 			}
-			if (boxes.size() == 0) {
+			if (boxes.size() == 1) {
 				box = boxes.get(currentBox);
 				box.face = Resources.FACE_BLANK;
 				box.text = "";
