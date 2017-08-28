@@ -40,6 +40,7 @@ public class Main {
 	public static final Version VERSION = new Version("1.3");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
+	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
 
 	public static final String A_UPDATE = "update";
 	public static final String A_ABOUT = "about";
@@ -194,11 +195,10 @@ public class Main {
 	}
 
 	private static void resourceError(Throwable e) {
-		e.printStackTrace();
-		JOptionPane.showMessageDialog(null,
-				"Could not load resources!\nPlease report this error to the programmer.\nAn exception has occured:\n"
-						+ e,
-				"Could not load resources", JOptionPane.ERROR_MESSAGE);
+		if (e != null)
+			e.printStackTrace();
+		JOptionPane.showMessageDialog(null, "Could not load resources!\nPlease report this error here:\n" + ISSUES_SITE,
+				"Could not load resources!", JOptionPane.ERROR_MESSAGE);
 		System.exit(1);
 	}
 
@@ -209,6 +209,15 @@ public class Main {
 				FileOutputStream out = new FileOutputStream(dest)) {
 			out.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 		}
+	}
+
+	public static boolean browseTo(String url) throws URISyntaxException, IOException {
+		URI dlSite = new URI(url);
+		if (Desktop.isDesktopSupported())
+			Desktop.getDesktop().browse(dlSite);
+		else
+			return false;
+		return true;
 	}
 
 	public static LoadFrame updateCheck(boolean disposeOfLoadFrame, boolean showUpToDate) {
@@ -251,13 +260,10 @@ public class Main {
 					int result = JOptionPane.showConfirmDialog(null, panel, "New update!", JOptionPane.YES_NO_OPTION,
 							JOptionPane.PLAIN_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
-						URI dlSite = new URI(DOWNLOAD_SITE);
-						if (Desktop.isDesktopSupported())
-							Desktop.getDesktop().browse(dlSite);
-						else
+						if (!browseTo(DOWNLOAD_SITE))
 							JOptionPane.showMessageDialog(null,
 									"Sadly, we can't browse to the download site for you on this platform. :(\nHead to\n"
-											+ dlSite + "\nto get the newest update!",
+											+ DOWNLOAD_SITE + "\nto get the newest update!",
 									"Operation not supported...", JOptionPane.ERROR_MESSAGE);
 						System.exit(0);
 					}

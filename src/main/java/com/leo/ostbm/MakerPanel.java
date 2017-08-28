@@ -246,11 +246,31 @@ public class MakerPanel extends JPanel implements ActionListener {
 							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				if (text.split("\n").length > 4) {
+				String[] lines = text.split("\n");
+				int linesNum = lines.length;
+				if (linesNum > 4) {
 					JOptionPane.showMessageDialog(this,
-							"Textbox " + (i + 1) + " has too many lines!\nOnly 4 lines per textbox, please.",
+							"Textbox " + (i + 1) + " has too many lines!\nIt has " + linesNum
+									+ " lines, but a single textbox can only fit 4 lines.",
 							"Too many lines!", JOptionPane.ERROR_MESSAGE);
 					return;
+				}
+				int maxLen = 47;
+				String errorBit = "with a face";
+				if (Resources.FACE_BLANK.equals(b.face)) {
+					maxLen += 10;
+					errorBit = "without a face";
+				}
+				for (int l = 0; l < lines.length; l++) {
+					int lineLen = lines[l].length();
+					if (lineLen > maxLen) {
+						JOptionPane.showMessageDialog(this,
+								"Line " + (l + 1) + " in textbox " + (i + 1) + " is too long!\nIt has " + lineLen
+										+ " characters, but textboxes " + errorBit + " can only fit " + maxLen
+										+ " characters per line.",
+								"Line too long!", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
 				}
 				drawTextbox(big, b.face, text, 0, 130 * i, i < boxes.size() - 1);
 			}
@@ -287,12 +307,12 @@ public class MakerPanel extends JPanel implements ActionListener {
 			g.drawImage(faceImage, x + 496, y + 16, null);
 		if (drawArrow)
 			g.drawImage(Resources.getArrow(), x + 299, y + 118, null);
-		g.setFont(Resources.getFontBox());
-		g.setColor(Color.WHITE);
-		drawString(g, text, x + 20, y + 10);
+		drawTextboxString(g, text, x + 20, y + 10);
 	}
 
-	public static void drawString(Graphics g, String str, int x, int y) {
+	private static void drawTextboxString(Graphics g, String str, int x, int y) {
+		g.setFont(Resources.getFontBox());
+		g.setColor(Color.WHITE);
 		final int lineSpace = g.getFontMetrics().getHeight() + 1;
 		for (String line : str.split("\n")) {
 			y += lineSpace;

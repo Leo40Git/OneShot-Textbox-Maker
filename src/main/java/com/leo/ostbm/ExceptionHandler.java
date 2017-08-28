@@ -10,8 +10,8 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 	public void uncaughtException(Thread t, Throwable e) {
 		System.err.println("Uncaught exception in thread \"" + t.getName() + "\":");
 		e.printStackTrace();
-		JOptionPane.showMessageDialog(null, "An uncaught exception has occured in thread \"" + t.getName() + "\":\n" + e
-				+ "\nPlease send the error log (\"ostbm.log\") to the developer,\nalong with a description of what you did leading up to the exception.",
+		JOptionPane.showMessageDialog(null,
+				"An uncaught exception has occured!\nPlease report this error here:\n" + Main.ISSUES_SITE,
 				"Uncaught exception!", JOptionPane.ERROR_MESSAGE);
 		System.exit(1);
 	}

@@ -1,4 +1,5 @@
-1.3
-Update 1.3: Update checking
-- Added update detection!
-- Fixed being able to delete the only textbox
+1.3.1
+Update 1.3.1
+- More detailed textbox format errors
+- Better error reporting
+- Textbox preview is no longer vertically centered

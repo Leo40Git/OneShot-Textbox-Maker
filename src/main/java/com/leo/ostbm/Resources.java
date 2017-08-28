@@ -126,7 +126,7 @@ public class Resources {
 		BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics g = imageSmol.getGraphics();
 		g.drawImage(faces.get(face), 0, 0, smolSize, smolSize, null);
-		faceIcons.put(face, new ImageIcon(imageSmol));
+		faceIcons.put(face, new ImageIcon(imageSmol, "icon for face " + face));
 	}
 
 	public static ImageIcon getFaceIcon(String name) {
@@ -136,7 +136,7 @@ public class Resources {
 	public static File getFaceFile(String face) {
 		return faceFiles.get(face);
 	}
-	
+
 	public static void sortFaces() {
 		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));

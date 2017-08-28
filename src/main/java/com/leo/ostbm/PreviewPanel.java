@@ -1,6 +1,7 @@
 package com.leo.ostbm;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -29,9 +30,12 @@ public class PreviewPanel extends JPanel implements ActionListener {
 
 	public PreviewPanel(BufferedImage image) {
 		this.image = image;
-		previewImage = new ImageIcon(image);
+		previewImage = new ImageIcon(image, "image preview");
 		setLayout(new BorderLayout());
-		JScrollPane previewScroll = new JScrollPane(new JLabel(previewImage));
+		JPanel previewPanel = new JPanel();
+		previewPanel.add(new JLabel(previewImage));
+		previewPanel.setPreferredSize(new Dimension(previewImage.getIconWidth(), previewImage.getIconHeight()));
+		JScrollPane previewScroll = new JScrollPane(previewPanel);
 		add(previewScroll, BorderLayout.CENTER);
 		saveButton = new JButton("Save");
 		saveButton.addActionListener(this);
