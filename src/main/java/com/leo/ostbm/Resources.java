@@ -47,7 +47,7 @@ public class Resources {
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
 		}
 		File ignoreSolstice = new File(facesFolder.getPath() + "/nospoilers");
-		addFaces(facesFolder, ignoreSolstice.exists());
+		addFaces(facesFolder, ignoreSolstice.exists() || new File("ignorenospoilers").exists());
 		sortFaces();
 	}
 
