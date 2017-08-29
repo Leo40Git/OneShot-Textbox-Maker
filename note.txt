@@ -1,0 +1,6 @@
+To add faces, simply add the face image to the "faces" folder, or any subfolder inside that folder!
+
+If you want to use faces from the Solstice route (and potentially spoil yourself), delete the "nospoilers" file in the "faces" folder.
+
+The "original" and "solstice" folder contains faces from the game itself. These belong to NightMargin, GIR and Eliza.
+The "discord" folder contains faces from the OneShot Discord server. It seems whoever made them left the server...

@@ -46,7 +46,8 @@ public class Resources {
 					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder next to the application that contains the faces.",
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
 		}
-		addFaces(facesFolder);
+		File ignoreSolstice = new File(facesFolder.getPath() + "/nospoilers");
+		addFaces(facesFolder, ignoreSolstice.exists());
 		sortFaces();
 	}
 
@@ -100,15 +101,16 @@ public class Resources {
 		return name;
 	}
 
-	public static void addFaces(File dir) throws IOException {
+	public static void addFaces(File dir, boolean ignoreSolstice) throws IOException {
 		if (dir.isFile()) {
 			addFace(dir);
 			return;
 		}
 		for (File face : dir.listFiles())
-			if (face.isDirectory())
-				addFaces(face);
-			else {
+			if (face.isDirectory()) {
+				if (ignoreSolstice || !"solstice".equals(face.getName()))
+					addFaces(face, false);
+			} else {
 				try {
 					addFace(face);
 				} catch (Exception e) {
