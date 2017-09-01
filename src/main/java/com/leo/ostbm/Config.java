@@ -12,6 +12,7 @@ public class Config {
 
 	public static final String KEY_CONFIG_BUILD = "config_build";
 	public static final String KEY_SKIP_UPDATE_CHECK = "skip_update_check";
+	public static final String KEY_LAST_PROJECT_FILE = "last_project_file";
 
 	private static Preferences config;
 
@@ -20,7 +21,7 @@ public class Config {
 			config = Preferences.userNodeForPackage(Main.class);
 		config.putLong(KEY_CONFIG_BUILD, BUILD);
 	}
-	
+
 	public static void wipe() {
 		try {
 			config.removeNode();

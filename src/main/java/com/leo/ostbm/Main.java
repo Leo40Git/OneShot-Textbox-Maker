@@ -1,6 +1,7 @@
 package com.leo.ostbm;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
@@ -22,6 +23,7 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -34,18 +36,25 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Main {
 
-	public static final Version VERSION = new Version("1.3.2");
+	public static final Version VERSION = new Version("1.4");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
 
-	public static final String A_UPDATE = "update";
-	public static final String A_ABOUT = "about";
+	public static final String A_FILE_NEW = "file_new";
+	public static final String A_FILE_LOAD = "file_load";
+	public static final String A_FILE_LOAD_LAST = "file_load_last";
+	public static final String A_FILE_SAVE = "file_save";
+	public static final String A_FILE_SAVE_AS = "file_save_as";
+	public static final String A_QUESTION_UPDATE = "question_update";
+	public static final String A_QUESTION_ABOUT = "question_about";
 
 	private static JFrame frame;
+	private static MakerPanel panel;
 
 	static class FNCPrintStream extends PrintStream {
 
@@ -78,13 +87,63 @@ public class Main {
 
 	static class MenuActionListener implements ActionListener {
 
+		private void fileError(String command, IOException e, String title, String message) {
+			System.err.println("File command \"" + command + "\" failed!");
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(frame, message, title, JOptionPane.ERROR_MESSAGE);
+		}
+
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			switch (e.getActionCommand()) {
-			case A_UPDATE:
+			String cmd = e.getActionCommand();
+			switch (cmd) {
+			// "File" Menu
+			case A_FILE_NEW:
+				try {
+					panel.newProjectFile();
+				} catch (IOException e1) {
+					fileError(cmd, e1, "New project failed", "Could not create new project!");
+				}
+				break;
+			case A_FILE_LOAD:
+				try {
+					panel.loadProjectFile(null);
+				} catch (IOException e1) {
+					fileError(cmd, e1, "Loading project failed", "Could not load project file!");
+				}
+				break;
+			case A_FILE_LOAD_LAST:
+				try {
+					File sel = new File(Config.get(Config.KEY_LAST_PROJECT_FILE, ""));
+					if (!sel.exists())
+						break;
+					panel.loadProjectFile(sel);
+				} catch (IOException e1) {
+					fileError(cmd, e1, "Loading project failed", "Could not load project file!");
+				}
+				break;
+			case A_FILE_SAVE:
+				try {
+					panel.saveProjectFile(null);
+				} catch (IOException e1) {
+					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
+				}
+				break;
+			case A_FILE_SAVE_AS:
+				try {
+					File sel = openFileDialog(true, frame, "Save project file", MakerPanel.TBPROJ_FILTER);
+					if (sel == null)
+						break;
+					panel.saveProjectFile(sel);
+				} catch (IOException e1) {
+					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
+				}
+				break;
+			// "?" Menu
+			case A_QUESTION_UPDATE:
 				Main.updateCheck(true, true);
 				break;
-			case A_ABOUT:
+			case A_QUESTION_ABOUT:
 				JOptionPane.showMessageDialog(frame,
 						"OneShot Textbox Maker (OSTBM) version " + VERSION + "\nMade by Leo",
 						"About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE);
@@ -172,19 +231,43 @@ public class Main {
 			frame.setResizable(false);
 			MenuActionListener l = new MenuActionListener();
 			JMenuBar mb = new JMenuBar();
+			JMenu mFile = new JMenu("File");
+			mb.add(mFile);
+			JMenuItem miFileNew = new JMenuItem("New Project");
+			miFileNew.addActionListener(l);
+			miFileNew.setActionCommand(A_FILE_NEW);
+			mFile.add(miFileNew);
+			JMenuItem miFileLoad = new JMenuItem("Load Project");
+			miFileLoad.addActionListener(l);
+			miFileLoad.setActionCommand(A_FILE_LOAD);
+			mFile.add(miFileLoad);
+			JMenuItem miFileLoadLast = new JMenuItem("Load Last Project");
+			miFileLoadLast.addActionListener(l);
+			miFileLoadLast.setActionCommand(A_FILE_LOAD_LAST);
+			mFile.add(miFileLoadLast);
+			mFile.addSeparator();
+			JMenuItem miFileSave = new JMenuItem("Save Project");
+			miFileSave.addActionListener(l);
+			miFileSave.setActionCommand(A_FILE_SAVE);
+			mFile.add(miFileSave);
+			JMenuItem miFileSaveAs = new JMenuItem("Save Project As...");
+			miFileSaveAs.addActionListener(l);
+			miFileSaveAs.setActionCommand(A_FILE_SAVE_AS);
+			mFile.add(miFileSaveAs);
 			JMenu mQuestion = new JMenu("?");
-			JMenuItem miUpdate = new JMenuItem("Check for Updates");
-			miUpdate.addActionListener(l);
-			miUpdate.setActionCommand(A_UPDATE);
-			mQuestion.add(miUpdate);
+			JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates");
+			miQuestionUpdate.addActionListener(l);
+			miQuestionUpdate.setActionCommand(A_QUESTION_UPDATE);
+			mQuestion.add(miQuestionUpdate);
 			mQuestion.addSeparator();
-			JMenuItem miAbout = new JMenuItem("About OSTBM");
-			miAbout.addActionListener(l);
-			miAbout.setActionCommand(A_ABOUT);
-			mQuestion.add(miAbout);
+			JMenuItem miQuestionAbout = new JMenuItem("About OSTBM");
+			miQuestionAbout.addActionListener(l);
+			miQuestionAbout.setActionCommand(A_QUESTION_ABOUT);
+			mQuestion.add(miQuestionAbout);
 			mb.add(mQuestion);
 			frame.setJMenuBar(mb);
-			frame.add(new MakerPanel());
+			panel = new MakerPanel();
+			frame.add(panel);
 			frame.pack();
 			frame.setLocationRelativeTo(null);
 			frame.setTitle("OneShot Textbox Maker v" + VERSION);
@@ -297,6 +380,35 @@ public class Main {
 			return null;
 		}
 		return loadFrame;
+	}
+
+	public static File openFileDialog(boolean openOrSave, Component parent, String title,
+			FileNameExtensionFilter filter) {
+		JFileChooser fc = new JFileChooser();
+		fc.setMultiSelectionEnabled(false);
+		fc.setAcceptAllFileFilterUsed(false);
+		fc.setDialogTitle(title);
+		fc.setFileFilter(filter);
+		fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
+		if (openOrSave) {
+			int ret = fc.showSaveDialog(parent);
+			if (ret == JFileChooser.APPROVE_OPTION) {
+				File sel = fc.getSelectedFile();
+				String selName = sel.getName();
+				String ext = filter.getExtensions()[0];
+				if (!selName.contains(".")
+						|| !selName.substring(selName.lastIndexOf(".") + 1, selName.length()).equalsIgnoreCase(ext)) {
+					selName += "." + ext;
+					sel = new File(sel.getParentFile().getPath() + "/" + selName);
+				}
+				return sel;
+			}
+		} else {
+			int ret = fc.showOpenDialog(parent);
+			if (ret == JFileChooser.APPROVE_OPTION)
+				return fc.getSelectedFile();
+		}
+		return null;
 	}
 
 }

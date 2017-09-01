@@ -46,8 +46,7 @@ public class Resources {
 					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder next to the application that contains the faces.",
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
 		}
-		File ignoreSolstice = new File(facesFolder.getAbsolutePath() + "/nospoilers");
-		System.out.println(ignoreSolstice);
+		File ignoreSolstice = new File(facesFolder.getPath() + "/nospoilers");
 		addFaces(facesFolder, ignoreSolstice.exists() && !new File("ignorenospoilers").exists());
 		sortFaces();
 	}
@@ -109,7 +108,6 @@ public class Resources {
 		}
 		for (File face : dir.listFiles())
 			if (face.isDirectory()) {
-				System.out.println(face.getName());
 				if (ignoreSolstice) {
 					if (!"solstice".equals(face.getName()))
 						addFaces(face, false);

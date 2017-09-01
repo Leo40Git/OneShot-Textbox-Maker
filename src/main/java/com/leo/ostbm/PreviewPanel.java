@@ -11,7 +11,6 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -47,28 +46,16 @@ public class PreviewPanel extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (A_SAVE_TEXTBOX.equals(e.getActionCommand())) {
-			JFileChooser fc = new JFileChooser();
-			fc.setMultiSelectionEnabled(false);
-			fc.setAcceptAllFileFilterUsed(false);
-			fc.setDialogTitle("Save textbox image");
-			fc.setFileFilter(new FileNameExtensionFilter("PNG files", "png"));
-			fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-			int ret = fc.showSaveDialog(this);
-			if (ret == JFileChooser.APPROVE_OPTION) {
-				File sel = fc.getSelectedFile();
-				String selName = sel.getName();
-				if (!selName.contains(".")
-						|| !selName.substring(selName.lastIndexOf(".") + 1, selName.length()).equalsIgnoreCase("png")) {
-					selName += ".png";
-					sel = new File(sel.getParentFile().getPath() + "/" + selName);
-				}
-				try {
-					ImageIO.write(image, "png", sel);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-					JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
-							"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
-				}
+			File sel = Main.openFileDialog(true, this, "Save textbox(es) image",
+					new FileNameExtensionFilter("PNG files", "png"));
+			if (sel == null)
+				return;
+			try {
+				ImageIO.write(image, "png", sel);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
+						"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}

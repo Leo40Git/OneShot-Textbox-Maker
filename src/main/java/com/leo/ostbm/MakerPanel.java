@@ -8,8 +8,13 @@ import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,9 +36,15 @@ import javax.swing.JTextArea;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
 public class MakerPanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
+
+	public static final FileNameExtensionFilter TBPROJ_FILTER = new FileNameExtensionFilter("Project files", "tbproj");
 
 	public static final Color COLOR_TEXTBOX = Color.decode("0x180C1E");
 	public static final Color COLOR_TEXTBOX_B = COLOR_TEXTBOX.brighter().brighter();
@@ -47,10 +58,11 @@ public class MakerPanel extends JPanel implements ActionListener {
 	public static final String A_SAVE_TEXTBOX = "saveTextbox";
 
 	class Textbox {
-		public String face;
-		public String text;
+		public String face = Resources.FACE_BLANK;
+		public String text = "";
 	}
 
+	private File projectFile;
 	private int currentBox;
 	private List<Textbox> boxes;
 	private JComboBox<String> faceSelect;
@@ -137,10 +149,107 @@ public class MakerPanel extends JPanel implements ActionListener {
 		box.text = textArea.getText();
 	}
 
-	private void setCurrentBox() {
+	private void readCurrentBox() {
 		Textbox box = boxes.get(currentBox);
 		faceSelect.setSelectedItem(box.face);
 		textArea.setText(box.text);
+	}
+
+	public boolean isProjectEmpty() {
+		if (boxes == null)
+			return true;
+		if (boxes.isEmpty())
+			return true;
+		boolean emptyProject = true;
+		for (Textbox box : boxes) {
+			if (!box.text.isEmpty() || !Resources.FACE_BLANK.equals(box.face)) {
+				emptyProject = false;
+				break;
+			}
+		}
+		return emptyProject;
+	}
+
+	public File getProjectFile() {
+		return projectFile;
+	}
+
+	public void newProjectFile() throws IOException {
+		updateCurrentBox();
+		boolean emptyProject = isProjectEmpty();
+		if (!emptyProject) {
+			int result = JOptionPane.showConfirmDialog(this,
+					"Do you want to save the current project before creating a new project?",
+					"Save before creating new project?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.CANCEL_OPTION)
+				return;
+			else if (result == JOptionPane.YES_OPTION)
+				saveProjectFile(null);
+		}
+		projectFile = null;
+		boxes.clear();
+		boxes.add(new Textbox());
+		faceSelect.setSelectedItem(Resources.FACE_BLANK);
+		textArea.setText("");
+	}
+
+	public void saveProjectFile(File dest) throws IOException {
+		if (dest == null) {
+			if (projectFile == null) {
+				File sel = Main.openFileDialog(true, this, "Save project file", TBPROJ_FILTER);
+				if (sel == null)
+					return;
+				projectFile = sel;
+			}
+			dest = projectFile;
+		}
+		if (dest.exists() && !dest.equals(projectFile)) {
+			int result = JOptionPane.showConfirmDialog(this, "File \"" + dest + "\" already exists.\nOverwrite it?",
+					"Destination file exists", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.NO_OPTION)
+				return;
+			dest.delete();
+			dest.createNewFile();
+		}
+		updateCurrentBox();
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		try (FileWriter fw = new FileWriter(dest); BufferedWriter writer = new BufferedWriter(fw)) {
+			gson.toJson(boxes, writer);
+		} catch (IOException e) {
+			throw e;
+		}
+		projectFile = dest;
+		Config.set(Config.KEY_LAST_PROJECT_FILE, projectFile.getAbsolutePath());
+	}
+
+	public void loadProjectFile(File src) throws IOException {
+		boolean emptyProject = isProjectEmpty();
+		if (!emptyProject) {
+			int result = JOptionPane.showConfirmDialog(this,
+					"Do you want to save the current project before loading another project?",
+					"Save before loading other project?", JOptionPane.YES_NO_CANCEL_OPTION,
+					JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.CANCEL_OPTION)
+				return;
+			else if (result == JOptionPane.YES_OPTION)
+				saveProjectFile(null);
+		}
+		if (src == null) {
+			src = Main.openFileDialog(false, this, "Load project file", TBPROJ_FILTER);
+			if (src == null)
+				return;
+		}
+		Gson gson = new GsonBuilder().create();
+		try (FileReader fr = new FileReader(src); BufferedReader reader = new BufferedReader(fr)) {
+			Type type = new TypeToken<List<Textbox>>() {
+			}.getType();
+			boxes = gson.fromJson(reader, type);
+		} catch (IOException e) {
+			throw e;
+		}
+		projectFile = src;
+		Config.set(Config.KEY_LAST_PROJECT_FILE, projectFile.getAbsolutePath());
+		readCurrentBox();
 	}
 
 	@Override
@@ -202,7 +311,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox < 0)
 				currentBox = 0;
 			updateBoxLabel();
-			setCurrentBox();
+			readCurrentBox();
 			break;
 		case A_PREV_BOX:
 			updateCurrentBox();
@@ -210,7 +319,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox < 0)
 				currentBox = 0;
 			updateBoxLabel();
-			setCurrentBox();
+			readCurrentBox();
 			break;
 		case A_NEXT_BOX:
 			updateCurrentBox();
@@ -218,7 +327,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox > boxes.size() - 1)
 				currentBox = boxes.size() - 1;
 			updateBoxLabel();
-			setCurrentBox();
+			readCurrentBox();
 			break;
 		case A_ADD_BOX:
 			updateCurrentBox();
@@ -230,7 +339,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 			if (currentBox > boxes.size() - 1)
 				currentBox = boxes.size() - 1;
 			updateBoxLabel();
-			setCurrentBox();
+			readCurrentBox();
 			break;
 		case A_MAKE_TEXTBOX:
 			updateCurrentBox();

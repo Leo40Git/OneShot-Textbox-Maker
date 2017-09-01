@@ -1,5 +1,3 @@
-1.3.2
-Update 1.3.2: Despoilerizing
-- Solstice faces are now hidden by default
-- Remove "faces/nospoilers" (and restart) to show Solstice faces
-Please delete the "faces" folder before updating.
+1.4
+Update 1.4: Project-ile!
+- Save & load projects, which contain the textbox(es)'s data.
