@@ -307,10 +307,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			}
 			boxes.clear();
 			boxes.addAll(temp);
-			DefaultListModel<Textbox> boxSelectModel = new DefaultListModel<>();
-			for (Textbox box : boxes)
-				boxSelectModel.addElement(box);
-			boxSelect.setModel(boxSelectModel);
+			boxSelect.setSelectedIndex(-1);
+			updateBoxList();
 		} catch (IOException e) {
 			throw e;
 		}
