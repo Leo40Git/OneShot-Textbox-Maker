@@ -7,6 +7,8 @@ import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -40,7 +42,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Main {
 
-	public static final Version VERSION = new Version("1.4");
+	public static final Version VERSION = new Version("1.4.1");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
@@ -50,6 +52,7 @@ public class Main {
 	public static final String A_FILE_LOAD_LAST = "file_load_last";
 	public static final String A_FILE_SAVE = "file_save";
 	public static final String A_FILE_SAVE_AS = "file_save_as";
+	public static final String A_FILE_EXIT = "file_exit";
 	public static final String A_QUESTION_UPDATE = "question_update";
 	public static final String A_QUESTION_ABOUT = "question_about";
 
@@ -87,7 +90,7 @@ public class Main {
 
 	static class MenuActionListener implements ActionListener {
 
-		private void fileError(String command, IOException e, String title, String message) {
+		public static void fileError(String command, IOException e, String title, String message) {
 			System.err.println("File command \"" + command + "\" failed!");
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(frame, message, title, JOptionPane.ERROR_MESSAGE);
@@ -139,6 +142,9 @@ public class Main {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
+			case A_FILE_EXIT:
+				close();
+				break;
 			// "?" Menu
 			case A_QUESTION_UPDATE:
 				Main.updateCheck(true, true);
@@ -152,6 +158,15 @@ public class Main {
 				System.out.println("Undefined action: " + e.getActionCommand());
 				break;
 			}
+		}
+
+	}
+
+	static class ConfirmCloseWindowListener extends WindowAdapter {
+
+		@Override
+		public void windowClosing(WindowEvent e) {
+			Main.close();
 		}
 
 	}
@@ -223,7 +238,8 @@ public class Main {
 		}
 		SwingUtilities.invokeLater(() -> {
 			frame = new JFrame();
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			frame.addWindowListener(new ConfirmCloseWindowListener());
 			final Dimension size = new Dimension(640, 480);
 			frame.setPreferredSize(size);
 			frame.setMaximumSize(size);
@@ -254,6 +270,11 @@ public class Main {
 			miFileSaveAs.addActionListener(l);
 			miFileSaveAs.setActionCommand(A_FILE_SAVE_AS);
 			mFile.add(miFileSaveAs);
+			mFile.addSeparator();
+			JMenuItem miFileExit = new JMenuItem("Exit OBSTM");
+			miFileExit.addActionListener(l);
+			miFileExit.setActionCommand(A_FILE_EXIT);
+			mFile.add(miFileExit);
 			JMenu mQuestion = new JMenu("?");
 			JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates");
 			miQuestionUpdate.addActionListener(l);
@@ -275,6 +296,25 @@ public class Main {
 			frame.requestFocus();
 			loadFrame.dispose();
 		});
+	}
+
+	public static void close() {
+		if (panel.isProjectEmpty())
+			System.exit(0);
+		else {
+			int sel = JOptionPane.showConfirmDialog(panel, "Do you want to save your project before exiting OSTBM?",
+					"Save before exiting?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (sel == JOptionPane.CANCEL_OPTION)
+				return;
+			if (sel == JOptionPane.YES_OPTION)
+				try {
+					panel.saveProjectFile(null);
+				} catch (IOException e1) {
+					MenuActionListener.fileError(A_FILE_SAVE, e1, "Saving project failed",
+							"Could not save project file!");
+				}
+			System.exit(0);
+		}
 	}
 
 	private static void resourceError(Throwable e) {

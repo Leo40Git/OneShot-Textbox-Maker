@@ -156,10 +156,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 	}
 
 	public boolean isProjectEmpty() {
-		if (boxes == null)
-			return true;
-		if (boxes.isEmpty())
-			return true;
+		updateCurrentBox();
 		boolean emptyProject = true;
 		for (Textbox box : boxes) {
 			if (!box.text.isEmpty() || !Resources.FACE_BLANK.equals(box.face)) {
