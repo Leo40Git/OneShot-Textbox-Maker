@@ -3,6 +3,7 @@ package com.leo.ostbm;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
@@ -22,6 +23,7 @@ import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -34,13 +36,18 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.leo.ostbm.Resources.Facepic;
+import com.leo.ostbm.Resources.Icon;
 
-public class MakerPanel extends JPanel implements ActionListener {
+public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -49,10 +56,9 @@ public class MakerPanel extends JPanel implements ActionListener {
 	public static final Color COLOR_TEXTBOX = Color.decode("0x180C1E");
 	public static final Color COLOR_TEXTBOX_B = COLOR_TEXTBOX.brighter().brighter();
 
+	public static final String A_FACE_FOLDER = "faceFolder";
 	public static final String A_CUSTOM_FACE = "customFace";
 	public static final String A_REMOVE_BOX = "removeBox";
-	public static final String A_PREV_BOX = "prevBox";
-	public static final String A_NEXT_BOX = "nextBox";
 	public static final String A_ADD_BOX = "addBox";
 	public static final String A_MAKE_TEXTBOX = "makeTextbox";
 	public static final String A_SAVE_TEXTBOX = "saveTextbox";
@@ -60,99 +66,133 @@ public class MakerPanel extends JPanel implements ActionListener {
 	class Textbox {
 		public String face = Resources.FACE_BLANK;
 		public String text = "";
+
+		@Override
+		public String toString() {
+			String t = text;
+			t = t.trim().replace('\n', ' ');
+			final int maxLen = 26;
+			if (t.length() > maxLen)
+				t = t.substring(0, maxLen) + "...";
+			if (t.isEmpty())
+				t = "(empty)";
+			return t;
+		}
 	}
 
 	private File projectFile;
 	private int currentBox;
 	private List<Textbox> boxes;
+
+	private JList<Textbox> boxSelect;
+	private DefaultListModel<Textbox> boxSelectModel;
+	private JButton addBoxButton, removeBoxButton;
+
 	private JComboBox<String> faceSelect;
-	private JButton customFaceButton;
+	private JButton openFaceFolderButton, customFaceButton;
 	private JTextArea textArea;
-	private JButton removeBoxButton;
-	private JButton prevBoxButton;
-	private JLabel boxIndexLabel;
-	private JButton nextBoxButton;
-	private JButton addBoxButton;
 	private JButton makeTextboxButton;
 
 	public MakerPanel() {
 		currentBox = 0;
 		boxes = new LinkedList<>();
 		boxes.add(new Textbox());
+		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BorderLayout());
+		JPanel boxSelectPanel = new JPanel();
+		boxSelectPanel.setLayout(new BorderLayout());
+		JPanel boxControlPanel = new JPanel();
+		boxControlPanel.setLayout(new BoxLayout(boxControlPanel, BoxLayout.LINE_AXIS));
+		addBoxButton = new JButton(Resources.getIcon(Icon.ADD_TEXTBOX));
+		addBoxButton.addActionListener(this);
+		addBoxButton.setActionCommand(A_ADD_BOX);
+		addBoxButton.setToolTipText("Add a new textbox");
+		addBoxButton.setMaximumSize(new Dimension(24, 24));
+		boxControlPanel.add(addBoxButton);
+		removeBoxButton = new JButton(Resources.getIcon(Icon.REMOVE_TEXTBOX));
+		removeBoxButton.addActionListener(this);
+		removeBoxButton.setActionCommand(A_REMOVE_BOX);
+		removeBoxButton.setToolTipText("Remove the current textbox");
+		removeBoxButton.setMaximumSize(new Dimension(24, 24));
+		boxControlPanel.add(removeBoxButton);
+		boxSelectPanel.add(boxControlPanel, BorderLayout.PAGE_START);
+		boxSelect = new JList<>();
+		boxSelectModel = new DefaultListModel<>();
+		boxSelectModel.addElement(boxes.get(0));
+		boxSelect.setModel(boxSelectModel);
+		boxSelect.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		boxSelect.addListSelectionListener(this);
+		boxSelect.setCellRenderer(new TextboxListRenderer());
+		JScrollPane scroll = new JScrollPane(boxSelect);
+		boxSelectPanel.add(scroll, BorderLayout.CENTER);
+		add(boxSelectPanel, BorderLayout.WEST);
+		JPanel boxEditPanel = new JPanel();
+		boxEditPanel.setLayout(new BorderLayout());
+		boxEditPanel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
 		JPanel faceSelectPanel = new JPanel();
 		faceSelectPanel.setLayout(new BoxLayout(faceSelectPanel, BoxLayout.LINE_AXIS));
-		faceSelectPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		faceSelectPanel.add(new JLabel("Face: "));
+		faceSelectPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 		faceSelect = new JComboBox<String>();
 		faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
 		faceSelect.setBackground(COLOR_TEXTBOX);
 		faceSelect.setForeground(Color.WHITE);
-		FacesComboBoxRenderer renderer = new FacesComboBoxRenderer();
-		faceSelect.setRenderer(renderer);
-		faceSelect.setToolTipText("Select a face to add to the textbox");
+		faceSelect.setRenderer(new FacesComboBoxRenderer());
+		faceSelect.setToolTipText("Select a facepic to add to the textbox");
 		faceSelectPanel.add(faceSelect);
-		faceSelectPanel.add(new JLabel(" "));
-		customFaceButton = new JButton("...");
+		JPanel faceControlPanel = new JPanel();
+		faceControlPanel.setLayout(new BoxLayout(faceControlPanel, BoxLayout.PAGE_AXIS));
+		openFaceFolderButton = new JButton(Resources.getIcon(Icon.FACE_FOLDER));
+		openFaceFolderButton.addActionListener(this);
+		openFaceFolderButton.setActionCommand(A_FACE_FOLDER);
+		openFaceFolderButton.setToolTipText("Open the facepic folder");
+		openFaceFolderButton.setPreferredSize(new Dimension(24, 24));
+		faceControlPanel.add(openFaceFolderButton);
+		customFaceButton = new JButton(Resources.getIcon(Icon.ADD_FACE));
 		customFaceButton.addActionListener(this);
 		customFaceButton.setActionCommand(A_CUSTOM_FACE);
-		customFaceButton.setToolTipText("Add a custom face image");
-		faceSelectPanel.add(customFaceButton);
-		add(faceSelectPanel, BorderLayout.PAGE_START);
+		customFaceButton.setToolTipText("Add a custom facepic");
+		customFaceButton.setPreferredSize(new Dimension(24, 24));
+		faceControlPanel.add(customFaceButton);
+		faceSelectPanel.add(faceControlPanel);
+		boxEditPanel.add(faceSelectPanel, BorderLayout.PAGE_START);
 		textArea = new JTextArea();
 		textArea.setFont(Resources.getFontBox());
 		textArea.setBackground(COLOR_TEXTBOX);
 		textArea.setForeground(Color.WHITE);
 		textArea.setCaretColor(Color.WHITE);
-		add(new JScrollPane(textArea), BorderLayout.CENTER);
+		boxEditPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BorderLayout());
-		JPanel boxIndexPanel = new JPanel();
-		removeBoxButton = new JButton("-");
-		removeBoxButton.addActionListener(this);
-		removeBoxButton.setActionCommand(A_REMOVE_BOX);
-		removeBoxButton.setToolTipText("Remove a textbox");
-		boxIndexPanel.add(removeBoxButton);
-		prevBoxButton = new JButton("<");
-		prevBoxButton.addActionListener(this);
-		prevBoxButton.setActionCommand(A_PREV_BOX);
-		prevBoxButton.setToolTipText("Go to previous textbox");
-		boxIndexPanel.add(prevBoxButton);
-		boxIndexLabel = new JLabel();
-		updateBoxLabel();
-		boxIndexPanel.add(boxIndexLabel);
-		nextBoxButton = new JButton(">");
-		nextBoxButton.addActionListener(this);
-		nextBoxButton.setActionCommand(A_NEXT_BOX);
-		nextBoxButton.setToolTipText("Go to next textbox");
-		boxIndexPanel.add(nextBoxButton);
-		addBoxButton = new JButton("+");
-		addBoxButton.addActionListener(this);
-		addBoxButton.setActionCommand(A_ADD_BOX);
-		addBoxButton.setToolTipText("Add a textbox");
-		boxIndexPanel.add(addBoxButton);
-		bottomPanel.add(boxIndexPanel, BorderLayout.PAGE_START);
 		makeTextboxButton = new JButton("Make a Textbox!");
 		makeTextboxButton.addActionListener(this);
 		makeTextboxButton.setActionCommand(A_MAKE_TEXTBOX);
 		bottomPanel.add(makeTextboxButton, BorderLayout.PAGE_END);
-		add(bottomPanel, BorderLayout.PAGE_END);
-	}
-
-	private void updateBoxLabel() {
-		boxIndexLabel.setText((currentBox + 1) + " / " + boxes.size());
+		boxEditPanel.add(bottomPanel, BorderLayout.PAGE_END);
+		add(boxEditPanel, BorderLayout.CENTER);
 	}
 
 	private void updateCurrentBox() {
 		Textbox box = boxes.get(currentBox);
 		box.face = faceSelect.getItemAt(faceSelect.getSelectedIndex());
 		box.text = textArea.getText();
+		boxSelect.repaint();
 	}
 
-	private void readCurrentBox() {
+	private void updateBoxComponents() {
 		Textbox box = boxes.get(currentBox);
 		faceSelect.setSelectedItem(box.face);
 		textArea.setText(box.text);
+	}
+
+	private void updateBoxList() {
+		int sel = boxSelect.getSelectedIndex();
+		boxSelectModel = new DefaultListModel<>();
+		for (Textbox b : boxes)
+			boxSelectModel.addElement(b);
+		if (sel > boxSelectModel.getSize() - 1)
+			sel = boxSelectModel.getSize() - 1;
+		boxSelect.setModel(boxSelectModel);
+		boxSelect.setSelectedIndex(sel);
 	}
 
 	public boolean isProjectEmpty() {
@@ -186,11 +226,27 @@ public class MakerPanel extends JPanel implements ActionListener {
 		projectFile = null;
 		boxes.clear();
 		boxes.add(new Textbox());
-		faceSelect.setSelectedItem(Resources.FACE_BLANK);
-		textArea.setText("");
+		currentBox = 0;
+		updateBoxComponents();
+		updateBoxList();
 	}
 
 	public void saveProjectFile(File dest) throws IOException {
+		updateCurrentBox();
+		int hasCustomFace = -1;
+		for (int i = 0; i < boxes.size(); i++) {
+			if (Resources.getFace(boxes.get(i).face).isCustom()) {
+				hasCustomFace = i;
+				break;
+			}
+		}
+		if (hasCustomFace != -1) {
+			int result = JOptionPane.showConfirmDialog(this, "Textbox " + (hasCustomFace + 1)
+					+ " has a custom face!\nThis will prevent a user without the custom from opening the project file.\nSave anyway?",
+					"Textbox has custom face", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.NO_OPTION)
+				return;
+		}
 		if (dest == null) {
 			if (projectFile == null) {
 				File sel = Main.openFileDialog(true, this, "Save project file", TBPROJ_FILTER);
@@ -208,7 +264,6 @@ public class MakerPanel extends JPanel implements ActionListener {
 			dest.delete();
 			dest.createNewFile();
 		}
-		updateCurrentBox();
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		try (FileWriter fw = new FileWriter(dest); BufferedWriter writer = new BufferedWriter(fw)) {
 			gson.toJson(boxes, writer);
@@ -216,7 +271,6 @@ public class MakerPanel extends JPanel implements ActionListener {
 			throw e;
 		}
 		projectFile = dest;
-		Config.set(Config.KEY_LAST_PROJECT_FILE, projectFile.getAbsolutePath());
 	}
 
 	public void loadProjectFile(File src) throws IOException {
@@ -240,13 +294,29 @@ public class MakerPanel extends JPanel implements ActionListener {
 		try (FileReader fr = new FileReader(src); BufferedReader reader = new BufferedReader(fr)) {
 			Type type = new TypeToken<List<Textbox>>() {
 			}.getType();
-			boxes = gson.fromJson(reader, type);
+			List<Textbox> temp = gson.fromJson(reader, type);
+			for (int i = 0; i < temp.size(); i++) {
+				Textbox box = temp.get(i);
+				if (Resources.getFace(box.face) == null) {
+					JOptionPane.showMessageDialog(this,
+							"Textbox " + (i + 1) + " specifies a facepic that isn't currently loaded: \"" + box.face
+									+ "\"\nPlease make sure there is a loaded facepic with that name, then try again.",
+							"Missing facepic", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+			}
+			boxes.clear();
+			boxes.addAll(temp);
+			DefaultListModel<Textbox> boxSelectModel = new DefaultListModel<>();
+			for (Textbox box : boxes)
+				boxSelectModel.addElement(box);
+			boxSelect.setModel(boxSelectModel);
 		} catch (IOException e) {
 			throw e;
 		}
 		projectFile = src;
-		Config.set(Config.KEY_LAST_PROJECT_FILE, projectFile.getAbsolutePath());
-		readCurrentBox();
+		updateBoxComponents();
+		updateBoxList();
 	}
 
 	@Override
@@ -256,6 +326,15 @@ public class MakerPanel extends JPanel implements ActionListener {
 		int ret;
 		Textbox box;
 		switch (a) {
+		case A_FACE_FOLDER:
+			if (!Desktop.isDesktopSupported())
+				return;
+			try {
+				Desktop.getDesktop().browse(new File("res/faces").toURI());
+			} catch (IOException e2) {
+				e2.printStackTrace();
+			}
+			break;
 		case A_CUSTOM_FACE:
 			fc = new JFileChooser();
 			fc.setMultiSelectionEnabled(true);
@@ -276,7 +355,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 									JOptionPane.ERROR_MESSAGE);
 							return;
 						}
-						Resources.addFace(sel, faceName, image);
+						Resources.addFace(faceName, sel, image);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 						JOptionPane.showMessageDialog(this, "An exception occured while loading the face:\n" + e1,
@@ -307,24 +386,8 @@ public class MakerPanel extends JPanel implements ActionListener {
 				currentBox--;
 			if (currentBox < 0)
 				currentBox = 0;
-			updateBoxLabel();
-			readCurrentBox();
-			break;
-		case A_PREV_BOX:
-			updateCurrentBox();
-			currentBox--;
-			if (currentBox < 0)
-				currentBox = 0;
-			updateBoxLabel();
-			readCurrentBox();
-			break;
-		case A_NEXT_BOX:
-			updateCurrentBox();
-			currentBox++;
-			if (currentBox > boxes.size() - 1)
-				currentBox = boxes.size() - 1;
-			updateBoxLabel();
-			readCurrentBox();
+			updateBoxComponents();
+			updateBoxList();
 			break;
 		case A_ADD_BOX:
 			updateCurrentBox();
@@ -335,8 +398,8 @@ public class MakerPanel extends JPanel implements ActionListener {
 			currentBox++;
 			if (currentBox > boxes.size() - 1)
 				currentBox = boxes.size() - 1;
-			updateBoxLabel();
-			readCurrentBox();
+			updateBoxComponents();
+			updateBoxList();
 			break;
 		case A_MAKE_TEXTBOX:
 			updateCurrentBox();
@@ -399,6 +462,18 @@ public class MakerPanel extends JPanel implements ActionListener {
 		}
 	}
 
+	@Override
+	public void valueChanged(ListSelectionEvent e) {
+		if (e.getSource().equals(boxSelect)) {
+			updateCurrentBox();
+			int sel = boxSelect.getSelectedIndex();
+			if (sel < 0)
+				return;
+			currentBox = sel;
+			updateBoxComponents();
+		}
+	}
+
 	public static BufferedImage drawTextbox(String face, String text) {
 		BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = ret.getGraphics();
@@ -408,7 +483,7 @@ public class MakerPanel extends JPanel implements ActionListener {
 
 	public static void drawTextbox(Graphics g, String face, String text, int x, int y, boolean drawArrow) {
 		g.drawImage(Resources.getBox(), x, y, null);
-		BufferedImage faceImage = Resources.getFace(face);
+		BufferedImage faceImage = Resources.getFace(face).getImage();
 		if (faceImage != null)
 			g.drawImage(faceImage, x + 496, y + 16, null);
 		if (drawArrow)
@@ -424,6 +499,33 @@ public class MakerPanel extends JPanel implements ActionListener {
 			y += lineSpace;
 			g.drawString(line, x, y);
 		}
+	}
+
+	class TextboxListRenderer extends JLabel implements ListCellRenderer<Textbox> {
+
+		private static final long serialVersionUID = 1L;
+
+		public TextboxListRenderer() {
+			setOpaque(true);
+			setHorizontalAlignment(LEFT);
+			setVerticalAlignment(CENTER);
+			setPreferredSize(new Dimension(200, 30));
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<? extends Textbox> list, Textbox value, int index,
+				boolean isSelected, boolean cellHasFocus) {
+			if (isSelected) {
+				setBackground(list.getSelectionBackground());
+				setForeground(list.getSelectionForeground());
+			} else {
+				setBackground(list.getBackground());
+				setForeground(list.getForeground());
+			}
+			setText("<html><b>Textbox " + (index + 1) + "</b><br>" + value.toString() + "</html>");
+			return this;
+		}
+
 	}
 
 	class FacesComboBoxRenderer extends JLabel implements ListCellRenderer<String> {
@@ -443,13 +545,16 @@ public class MakerPanel extends JPanel implements ActionListener {
 				setBackground(COLOR_TEXTBOX_B);
 			else
 				setBackground(COLOR_TEXTBOX);
-			ImageIcon faceIcon = Resources.getFaceIcon(value);
+			Facepic face = Resources.getFace(value);
+			ImageIcon faceIcon = face.getIcon();
 			if (faceIcon == null)
-				setIcon(Resources.getFaceIcon(Resources.FACE_BLANK));
+				setIcon(Resources.getFace(Resources.FACE_BLANK).getIcon());
 			else
 				setIcon(faceIcon);
-			String text = "<html><font color=white>" + value;
-			File faceFile = Resources.getFaceFile(value);
+			String text = "<html><font color=white>" + face.getName();
+			if (face.isCustom())
+				text += "<b>*</b>";
+			File faceFile = face.getFile();
 			if (faceFile != null)
 				text += "</font><br><font color=gray><i>" + faceFile.getPath() + "</i>";
 			text += "</font></html>";

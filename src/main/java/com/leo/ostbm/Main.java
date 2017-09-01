@@ -40,16 +40,17 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.leo.ostbm.Resources.Icon;
+
 public class Main {
 
-	public static final Version VERSION = new Version("1.4.1");
+	public static final Version VERSION = new Version("1.5");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
 
 	public static final String A_FILE_NEW = "file_new";
 	public static final String A_FILE_LOAD = "file_load";
-	public static final String A_FILE_LOAD_LAST = "file_load_last";
 	public static final String A_FILE_SAVE = "file_save";
 	public static final String A_FILE_SAVE_AS = "file_save_as";
 	public static final String A_FILE_EXIT = "file_exit";
@@ -111,16 +112,6 @@ public class Main {
 			case A_FILE_LOAD:
 				try {
 					panel.loadProjectFile(null);
-				} catch (IOException e1) {
-					fileError(cmd, e1, "Loading project failed", "Could not load project file!");
-				}
-				break;
-			case A_FILE_LOAD_LAST:
-				try {
-					File sel = new File(Config.get(Config.KEY_LAST_PROJECT_FILE, ""));
-					if (!sel.exists())
-						break;
-					panel.loadProjectFile(sel);
 				} catch (IOException e1) {
 					fileError(cmd, e1, "Loading project failed", "Could not load project file!");
 				}
@@ -230,6 +221,7 @@ public class Main {
 			loadFrame.setLoadString("Loading...");
 			loadFrame.repaint();
 		});
+		Resources.checkResFolder();
 		try {
 			Resources.initFonts();
 			Resources.initImages();
@@ -240,52 +232,12 @@ public class Main {
 			frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 			frame.addWindowListener(new ConfirmCloseWindowListener());
-			final Dimension size = new Dimension(640, 480);
+			final Dimension size = new Dimension(800, 600);
 			frame.setPreferredSize(size);
 			frame.setMaximumSize(size);
 			frame.setMinimumSize(size);
 			frame.setResizable(false);
-			MenuActionListener l = new MenuActionListener();
-			JMenuBar mb = new JMenuBar();
-			JMenu mFile = new JMenu("File");
-			mb.add(mFile);
-			JMenuItem miFileNew = new JMenuItem("New Project");
-			miFileNew.addActionListener(l);
-			miFileNew.setActionCommand(A_FILE_NEW);
-			mFile.add(miFileNew);
-			JMenuItem miFileLoad = new JMenuItem("Load Project");
-			miFileLoad.addActionListener(l);
-			miFileLoad.setActionCommand(A_FILE_LOAD);
-			mFile.add(miFileLoad);
-			JMenuItem miFileLoadLast = new JMenuItem("Load Last Project");
-			miFileLoadLast.addActionListener(l);
-			miFileLoadLast.setActionCommand(A_FILE_LOAD_LAST);
-			mFile.add(miFileLoadLast);
-			mFile.addSeparator();
-			JMenuItem miFileSave = new JMenuItem("Save Project");
-			miFileSave.addActionListener(l);
-			miFileSave.setActionCommand(A_FILE_SAVE);
-			mFile.add(miFileSave);
-			JMenuItem miFileSaveAs = new JMenuItem("Save Project As...");
-			miFileSaveAs.addActionListener(l);
-			miFileSaveAs.setActionCommand(A_FILE_SAVE_AS);
-			mFile.add(miFileSaveAs);
-			mFile.addSeparator();
-			JMenuItem miFileExit = new JMenuItem("Exit OBSTM");
-			miFileExit.addActionListener(l);
-			miFileExit.setActionCommand(A_FILE_EXIT);
-			mFile.add(miFileExit);
-			JMenu mQuestion = new JMenu("?");
-			JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates");
-			miQuestionUpdate.addActionListener(l);
-			miQuestionUpdate.setActionCommand(A_QUESTION_UPDATE);
-			mQuestion.add(miQuestionUpdate);
-			mQuestion.addSeparator();
-			JMenuItem miQuestionAbout = new JMenuItem("About OSTBM");
-			miQuestionAbout.addActionListener(l);
-			miQuestionAbout.setActionCommand(A_QUESTION_ABOUT);
-			mQuestion.add(miQuestionAbout);
-			mb.add(mQuestion);
+			JMenuBar mb = createMenuBar();
 			frame.setJMenuBar(mb);
 			panel = new MakerPanel();
 			frame.add(panel);
@@ -296,6 +248,49 @@ public class Main {
 			frame.requestFocus();
 			loadFrame.dispose();
 		});
+	}
+
+	private static JMenuBar createMenuBar() {
+		MenuActionListener l = new MenuActionListener();
+		JMenuBar mb = new JMenuBar();
+		JMenu mFile = new JMenu("File");
+		// "File" Menu
+		mb.add(mFile);
+		JMenuItem miFileNew = new JMenuItem("New Project", Resources.getIcon(Icon.NEW_PROJECT));
+		miFileNew.addActionListener(l);
+		miFileNew.setActionCommand(A_FILE_NEW);
+		mFile.add(miFileNew);
+		JMenuItem miFileLoad = new JMenuItem("Load Project", Resources.getIcon(Icon.LOAD_PROJECT));
+		miFileLoad.addActionListener(l);
+		miFileLoad.setActionCommand(A_FILE_LOAD);
+		mFile.add(miFileLoad);
+		mFile.addSeparator();
+		JMenuItem miFileSave = new JMenuItem("Save Project", Resources.getIcon(Icon.SAVE_PROJECT));
+		miFileSave.addActionListener(l);
+		miFileSave.setActionCommand(A_FILE_SAVE);
+		mFile.add(miFileSave);
+		JMenuItem miFileSaveAs = new JMenuItem("Save Project As...", Resources.getIcon(Icon.SAVE_PROJECT_AS));
+		miFileSaveAs.addActionListener(l);
+		miFileSaveAs.setActionCommand(A_FILE_SAVE_AS);
+		mFile.add(miFileSaveAs);
+		mFile.addSeparator();
+		JMenuItem miFileExit = new JMenuItem("Exit OBSTM", Resources.getIcon(Icon.EXIT));
+		miFileExit.addActionListener(l);
+		miFileExit.setActionCommand(A_FILE_EXIT);
+		mFile.add(miFileExit);
+		JMenu mQuestion = new JMenu("?");
+		// "?" Menu
+		JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates", Resources.getIcon(Icon.CHECK_FOR_UPDATES));
+		miQuestionUpdate.addActionListener(l);
+		miQuestionUpdate.setActionCommand(A_QUESTION_UPDATE);
+		mQuestion.add(miQuestionUpdate);
+		mQuestion.addSeparator();
+		JMenuItem miQuestionAbout = new JMenuItem("About OSTBM", Resources.getIcon(Icon.ABOUT));
+		miQuestionAbout.addActionListener(l);
+		miQuestionAbout.setActionCommand(A_QUESTION_ABOUT);
+		mQuestion.add(miQuestionAbout);
+		mb.add(mQuestion);
+		return mb;
 	}
 
 	public static void close() {

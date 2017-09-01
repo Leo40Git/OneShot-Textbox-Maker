@@ -20,35 +20,124 @@ public class Resources {
 
 	public static final String FACE_BLANK = "(none)";
 
-	private static Map<String, BufferedImage> faces;
-	private static Map<String, ImageIcon> faceIcons;
-	private static Map<String, File> faceFiles;
+	public static class Facepic {
+		private String name;
+		private File file;
+		private BufferedImage image;
+		private ImageIcon icon;
+		private boolean custom;
+
+		public Facepic(String name, File file, BufferedImage image, boolean custom) {
+			this.name = name;
+			this.file = file;
+			this.image = image;
+			makeIcon();
+			this.custom = custom;
+		}
+
+		private void makeIcon() {
+			final int smolSize = 48;
+			BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
+			Graphics g = imageSmol.getGraphics();
+			g.drawImage(image, 0, 0, smolSize, smolSize, null);
+			icon = new ImageIcon(imageSmol, "icon for face " + name);
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public File getFile() {
+			return file;
+		}
+
+		public BufferedImage getImage() {
+			return image;
+		}
+
+		public ImageIcon getIcon() {
+			return icon;
+		}
+
+		public boolean isCustom() {
+			return custom;
+		}
+	}
+
+	private static Map<String, Facepic> faces;
+	private static boolean loadingCustom;
+
+	public enum Icon {
+		NEW_PROJECT("New Project"),
+		LOAD_PROJECT("Load Project"),
+		SAVE_PROJECT("Save Project"),
+		SAVE_PROJECT_AS("Save Project As..."),
+		EXIT("Exit"),
+		CHECK_FOR_UPDATES("Check for Updates"),
+		ABOUT("About"),
+		FACE_FOLDER("Open Facepic Folder"),
+		ADD_FACE("Add Custom Facepic"),
+		ADD_TEXTBOX("Add Textbox"),
+		REMOVE_TEXTBOX("Remove Textbox");
+
+		String description;
+
+		Icon(String description) {
+			this.description = description;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+	}
+
+	private static Map<Icon, ImageIcon> icons;
 	private static BufferedImage box;
 	private static BufferedImage arrow;
 	private static Font fontBase;
 	private static Font fontBox;
 
+	public static void checkResFolder() {
+		File resFolder = new File("res");
+		if (!resFolder.exists()) {
+			JOptionPane.showMessageDialog(null,
+					"The resources folder doesn't exist!\nPlease make sure there's a \"res\" folder next to the application that contains the faces.",
+					"Resources folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
+	}
+
 	public static void initFonts() throws FontFormatException, IOException {
-		fontBase = Font.createFont(Font.TRUETYPE_FONT, Resources.class.getResourceAsStream("/font.ttf"));
+		fontBase = Font.createFont(Font.TRUETYPE_FONT, new File("res/font.ttf"));
 		fontBox = fontBase.deriveFont(Font.PLAIN, 20);
 	}
 
 	public static void initImages() throws IOException, URISyntaxException {
-		box = ImageIO.read(Resources.class.getResourceAsStream("/box.png"));
-		arrow = ImageIO.read(Resources.class.getResourceAsStream("/arrow.png"));
+		box = ImageIO.read(new File("res/box.png"));
+		arrow = ImageIO.read(new File("res/arrow.png"));
+		BufferedImage iconSheet = ImageIO.read(Resources.class.getResourceAsStream("/icons.png"));
+		icons = new HashMap<>();
+		int ix = 0, iy = 0;
+		for (Icon icon : Icon.values()) {
+			icons.put(icon, new ImageIcon(iconSheet.getSubimage(ix, iy, 16, 16), icon.getDescription()));
+			ix += 16;
+			if (ix == iconSheet.getWidth()) {
+				ix = 0;
+				iy += 16;
+			}
+		}
 		faces = new HashMap<>();
-		faceIcons = new HashMap<>();
-		faceFiles = new HashMap<>();
-		addFace(FACE_BLANK, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
-		File facesFolder = new File("faces");
+		addFace(FACE_BLANK, null, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
+		File facesFolder = new File("res/faces");
 		if (!facesFolder.exists()) {
 			JOptionPane.showMessageDialog(null,
-					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder next to the application that contains the faces.",
+					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder inside the resources folder (\"res\").",
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
 		}
-		File ignoreSolstice = new File(facesFolder.getPath() + "/nospoilers");
-		addFaces(facesFolder, ignoreSolstice.exists() && !new File("ignorenospoilers").exists());
+		addFaces(facesFolder, false);
 		sortFaces();
+		loadingCustom = true;
 	}
 
 	public static Font getFontBox() {
@@ -63,13 +152,17 @@ public class Resources {
 		return arrow;
 	}
 
+	public static ImageIcon getIcon(Icon icon) {
+		return icons.get(icon);
+	}
+
 	static final String[] DUMMY_STRING_ARRAY = new String[] {};
 
 	public static String[] getFaces() {
 		return faces.keySet().toArray(DUMMY_STRING_ARRAY);
 	}
 
-	public static BufferedImage getFace(String name) {
+	public static Facepic getFace(String name) {
 		return faces.get(name);
 	}
 
@@ -80,24 +173,16 @@ public class Resources {
 			return null;
 		faceName = faceName.substring(0, faceName.lastIndexOf('.'));
 		BufferedImage image = ImageIO.read(face);
-		faceName = addFace(faceName, image);
-		faceFiles.put(faceName, face);
+		faceName = addFace(faceName, face, image);
 		return faceName;
 	}
 
-	public static String addFace(String name, BufferedImage face) {
+	public static String addFace(String name, File file, BufferedImage face) {
 		if (face.getWidth() != 96 || face.getHeight() != 96)
 			throw new IllegalArgumentException("Face dimensions must be 96 by 96!");
 		while (faces.containsKey(name))
 			name += "-";
-		faces.put(name, face);
-		addFaceIcon(name);
-		return name;
-	}
-
-	public static String addFace(File file, String name, BufferedImage face) {
-		name = addFace(name, face);
-		faceFiles.put(name, file);
+		faces.put(name, new Facepic(name, file, face, loadingCustom));
 		return name;
 	}
 
@@ -124,30 +209,8 @@ public class Resources {
 			}
 	}
 
-	private static void addFaceIcon(String face) {
-		if (!faces.containsKey(face))
-			return;
-		final int smolSize = 48;
-		BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
-		Graphics g = imageSmol.getGraphics();
-		g.drawImage(faces.get(face), 0, 0, smolSize, smolSize, null);
-		faceIcons.put(face, new ImageIcon(imageSmol, "icon for face " + face));
-	}
-
-	public static ImageIcon getFaceIcon(String name) {
-		return faceIcons.get(name);
-	}
-
-	public static File getFaceFile(String face) {
-		return faceFiles.get(face);
-	}
-
 	public static void sortFaces() {
 		faces = faces.entrySet().stream().sorted(Map.Entry.comparingByKey())
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-		faceIcons = faceIcons.entrySet().stream().sorted(Map.Entry.comparingByKey())
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-		faceFiles = faceFiles.entrySet().stream().sorted(Map.Entry.comparingByKey())
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 	}
 
