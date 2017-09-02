@@ -459,7 +459,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			}
 			JFrame previewFrame = new JFrame();
 			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			final int extraHeight = 72;
+			final int extraHeight = 82;
 			final Dimension size = new Dimension(652, boxesImage.getHeight() + extraHeight);
 			final int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
 			if (size.height > maxHeight)
@@ -606,44 +606,33 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			super(text);
 			addKeyListener(new KeyAdapter() {
 				@Override
-				public void keyPressed(KeyEvent e) {
-					String text = getText();
-					Highlighter hl = getHighlighter();
-					hl.removeAllHighlights();
-					HighlightPainter p = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
-					int line = 0, lineLen = 0, hlStart = -1;
+				public void keyReleased(KeyEvent e) {
 					int maxLen = 57;
 					if (faceSelect.getSelectedItem() != Resources.FACE_BLANK)
 						maxLen -= 10;
-					for (int i = 0; i < text.length(); i++) {
-						if (line > 3) {
-							try {
-								hl.addHighlight(getLineStartOffset(line), text.length(), p);
-							} catch (BadLocationException e1) {
-								e1.printStackTrace();
+					Highlighter hl = getHighlighter();
+					hl.removeAllHighlights();
+					HighlightPainter p = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
+					String[] lines = getText().split("\n");
+					for (int i = 0; i < lines.length; i++) {
+						int start = 0, end = 0;
+						try {
+							start = getLineStartOffset(i);
+							end = getLineEndOffset(i);
+						} catch (BadLocationException e2) {
+							e2.printStackTrace();
+						}
+						try {
+							if (i > 3) {
+								hl.addHighlight(start, end, p);
+							} else if (lines[i].length() > maxLen) {
+								hl.addHighlight(start + maxLen, end, p);
 							}
-							break;
-						}
-						char c = text.charAt(lineLen);
-						if (c == '\n') {
-							line++;
-							lineLen = 0;
-							hlStart = -1;
-							continue;
-						}
-						System.out.println("line " + line + ", char " + lineLen + ", total chars " + i);
-						lineLen++;
-						if (lineLen > maxLen && hlStart < 0) {
-							hlStart = i;
-						}
-						if (hlStart > -1) {
-							try {
-								hl.addHighlight(hlStart, i + 1, p);
-							} catch (BadLocationException e1) {
-								e1.printStackTrace();
-							}
+						} catch (BadLocationException e1) {
+							e1.printStackTrace();
 						}
 					}
+					repaint();
 				}
 			});
 		}

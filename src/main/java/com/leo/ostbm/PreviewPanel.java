@@ -38,7 +38,7 @@ public class PreviewPanel extends JPanel implements ActionListener, ClipboardOwn
 
 	public PreviewPanel(BufferedImage image) {
 		this.image = image;
-		previewImage = new ImageIcon(image, "image preview");
+		previewImage = new ImageIcon(image, "textbox(es) preview");
 		setLayout(new BorderLayout());
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		JPanel previewPanel = new JPanel();
