@@ -10,6 +10,8 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -43,6 +45,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -170,7 +176,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		faceControlPanel.add(customFaceButton);
 		faceSelectPanel.add(faceControlPanel);
 		boxEditPanel.add(faceSelectPanel, BorderLayout.PAGE_START);
-		textArea = new JTextArea(boxes.get(currentBox).text);
+		textArea = new TextboxTextArea(boxes.get(currentBox).text);
 		textArea.setFont(Resources.getFontBox());
 		textArea.setBackground(COLOR_TEXTBOX);
 		textArea.setForeground(Color.WHITE);
@@ -551,7 +557,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 		@Override
 		protected void paintComponent(Graphics g) {
-
 			super.paintComponent(g);
 		}
 
@@ -589,6 +594,58 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			text += "</font></html>";
 			setText(text);
 			return this;
+		}
+
+	}
+
+	class TextboxTextArea extends JTextArea {
+
+		private static final long serialVersionUID = 1L;
+
+		public TextboxTextArea(String text) {
+			super(text);
+			addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					String text = getText();
+					Highlighter hl = getHighlighter();
+					hl.removeAllHighlights();
+					HighlightPainter p = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
+					int line = 0, lineLen = 0, hlStart = -1;
+					int maxLen = 57;
+					if (faceSelect.getSelectedItem() != Resources.FACE_BLANK)
+						maxLen -= 10;
+					for (int i = 0; i < text.length(); i++) {
+						if (line > 3) {
+							try {
+								hl.addHighlight(getLineStartOffset(line), text.length(), p);
+							} catch (BadLocationException e1) {
+								e1.printStackTrace();
+							}
+							break;
+						}
+						char c = text.charAt(lineLen);
+						if (c == '\n') {
+							line++;
+							lineLen = 0;
+							hlStart = -1;
+							continue;
+						}
+						System.out.println("line " + line + ", char " + lineLen + ", total chars " + i);
+						lineLen++;
+						if (lineLen > maxLen && hlStart < 0) {
+							hlStart = i;
+						}
+						if (hlStart > -1) {
+							try {
+								hl.addHighlight(hlStart, i + 1, p);
+							} catch (BadLocationException e1) {
+								e1.printStackTrace();
+							}
+						}
+					}
+				}
+			});
 		}
 
 	}
