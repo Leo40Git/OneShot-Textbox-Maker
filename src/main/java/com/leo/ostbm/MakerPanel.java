@@ -6,8 +6,11 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -117,12 +120,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		boxControlPanel.add(removeBoxButton);
 		boxSelectPanel.add(boxControlPanel, BorderLayout.PAGE_START);
 		boxSelect = new JList<>();
-		boxSelectModel = new DefaultListModel<>();
-		boxSelectModel.addElement(boxes.get(0));
-		boxSelect.setModel(boxSelectModel);
 		boxSelect.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		boxSelect.addListSelectionListener(this);
 		boxSelect.setCellRenderer(new TextboxListRenderer());
+		boxSelectModel = new DefaultListModel<>();
+		boxSelectModel.addElement(boxes.get(0));
+		boxSelect.setModel(boxSelectModel);
 		JScrollPane scroll = new JScrollPane(boxSelect);
 		boxSelectPanel.add(scroll, BorderLayout.CENTER);
 		add(boxSelectPanel, BorderLayout.WEST);
@@ -499,15 +502,17 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		}
 	}
 
-	class TextboxListRenderer extends JLabel implements ListCellRenderer<Textbox> {
+	static class TextboxListRenderer extends JLabel implements ListCellRenderer<Textbox> {
 
 		private static final long serialVersionUID = 1L;
+
+		private static final BufferedImage IMAGE = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
 
 		public TextboxListRenderer() {
 			setOpaque(true);
 			setHorizontalAlignment(LEFT);
 			setVerticalAlignment(CENTER);
-			setPreferredSize(new Dimension(200, 30));
+
 		}
 
 		@Override
@@ -520,8 +525,21 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				setBackground(list.getBackground());
 				setForeground(list.getForeground());
 			}
-			setText("<html><b>Textbox " + (index + 1) + "</b><br>" + value.toString() + "</html>");
+			String text = "<html><b>Textbox " + (index + 1) + "</b><br>" + value.toString() + "</html>";
+			setText(text);
+			// getGraphics() returns null here so we need to make our own Graphics object
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			Graphics2D g = ge.createGraphics(IMAGE);
+			g.setFont(getFont());
+			Rectangle2D bounds = g.getFontMetrics().getStringBounds(text, g);
+			setPreferredSize(new Dimension(200, (int) bounds.getHeight() + g.getFontMetrics().getHeight()));
 			return this;
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+
+			super.paintComponent(g);
 		}
 
 	}

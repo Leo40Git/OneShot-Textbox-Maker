@@ -1,6 +1,16 @@
-To add faces, simply add the face image to the "faces" folder, or any subfolder inside that folder!
+-- OneShot Textbox Maker (OBSTM) --
 
-If you want to use faces from the Solstice route (and potentially spoil yourself), delete the "nospoilers" file in the "faces" folder.
+WARNING! This application contains spoilers for Solstice (if you count facepics as spoilers)!
 
-The "original" and "solstice" folder contains faces from the game itself. These belong to NightMargin, GIR and Eliza.
-The "discord" folder contains faces from the OneShot Discord server. It seems whoever made them left the server...
+To add facepics, simply add the facepic image to the "faces" folder in the "res" folder, or any subfolder inside that folder!
+
+The "original" and "solstice" folder contains facepics from the game itself. These belong to NightMargin, GIR and Eliza.
+The "osdiscord" folder contains facepics from the OneShot Discord server. It seems whoever made them left the server...
+
+-- Licenses --
+
+Terminus, the font used in the textboxes themselves (`res/font.ttf`), is licensed under the Open Font License (http://scripts.sil.org/OFL).
+
+The textbox window (`res/box.png` and `res/arrow.png`) and the faces (found in `res/original/faces`) belong to Nightmargin, GIR and Eliza.
+
+The icons are part of the Silk Icons set, which is licensed under a Creative Commons Attribution 2.5 License (https://creativecommons.org/licenses/by/2.5/) and can be found here: http://www.famfamfam.com/lab/icons/silk/.
