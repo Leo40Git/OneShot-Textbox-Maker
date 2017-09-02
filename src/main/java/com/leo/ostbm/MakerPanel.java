@@ -63,12 +63,24 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public static final String A_CUSTOM_FACE = "customFace";
 	public static final String A_REMOVE_BOX = "removeBox";
 	public static final String A_ADD_BOX = "addBox";
-	public static final String A_MAKE_TEXTBOX = "makeTextbox";
-	public static final String A_SAVE_TEXTBOX = "saveTextbox";
+	public static final String A_MAKE_BOXES = "makeBoxes";
 
 	class Textbox {
-		public String face = Resources.FACE_BLANK;
-		public String text = "";
+		public String face;
+		public String text;
+
+		public Textbox(String face, String text) {
+			this.face = face;
+			this.text = text;
+		}
+
+		public Textbox(String text) {
+			this(Resources.FACE_BLANK, text);
+		}
+
+		public Textbox() {
+			this(Resources.FACE_BLANK, "");
+		}
 
 		@Override
 		public String toString() {
@@ -99,7 +111,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public MakerPanel() {
 		currentBox = 0;
 		boxes = new LinkedList<>();
-		boxes.add(new Textbox());
+		for (int i = 0; i < 6; i++) {
+			boxes.add(new Textbox("Test " + (i + 1)));
+		}
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BorderLayout());
 		JPanel boxSelectPanel = new JPanel();
@@ -124,8 +138,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		boxSelect.addListSelectionListener(this);
 		boxSelect.setCellRenderer(new TextboxListRenderer());
 		boxSelectModel = new DefaultListModel<>();
-		boxSelectModel.addElement(boxes.get(0));
-		boxSelect.setModel(boxSelectModel);
+		updateBoxList();
 		JScrollPane scroll = new JScrollPane(boxSelect);
 		boxSelectPanel.add(scroll, BorderLayout.CENTER);
 		add(boxSelectPanel, BorderLayout.WEST);
@@ -137,6 +150,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		faceSelectPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 		faceSelect = new JComboBox<String>();
 		faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
+		faceSelect.setSelectedItem(boxes.get(currentBox).face);
 		faceSelect.setBackground(COLOR_TEXTBOX);
 		faceSelect.setForeground(Color.WHITE);
 		faceSelect.setRenderer(new FacesComboBoxRenderer());
@@ -158,7 +172,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		faceControlPanel.add(customFaceButton);
 		faceSelectPanel.add(faceControlPanel);
 		boxEditPanel.add(faceSelectPanel, BorderLayout.PAGE_START);
-		textArea = new JTextArea();
+		textArea = new JTextArea(boxes.get(currentBox).text);
 		textArea.setFont(Resources.getFontBox());
 		textArea.setBackground(COLOR_TEXTBOX);
 		textArea.setForeground(Color.WHITE);
@@ -168,7 +182,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		bottomPanel.setLayout(new BorderLayout());
 		makeTextboxButton = new JButton("Make a Textbox!");
 		makeTextboxButton.addActionListener(this);
-		makeTextboxButton.setActionCommand(A_MAKE_TEXTBOX);
+		makeTextboxButton.setActionCommand(A_MAKE_BOXES);
 		bottomPanel.add(makeTextboxButton, BorderLayout.PAGE_END);
 		boxEditPanel.add(bottomPanel, BorderLayout.PAGE_END);
 		add(boxEditPanel, BorderLayout.CENTER);
@@ -188,14 +202,11 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	}
 
 	private void updateBoxList() {
-		int sel = boxSelect.getSelectedIndex();
 		boxSelectModel = new DefaultListModel<>();
 		for (Textbox b : boxes)
 			boxSelectModel.addElement(b);
-		if (sel > boxSelectModel.getSize() - 1)
-			sel = boxSelectModel.getSize() - 1;
 		boxSelect.setModel(boxSelectModel);
-		boxSelect.setSelectedIndex(sel);
+		boxSelect.setSelectedIndex(currentBox);
 	}
 
 	public boolean isProjectEmpty() {
@@ -396,13 +407,11 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			box = new Textbox();
 			box.face = lastBox.face;
 			boxes.add(box);
-			currentBox++;
-			if (currentBox > boxes.size() - 1)
-				currentBox = boxes.size() - 1;
+			currentBox = boxes.size() - 1;
 			updateBoxComponents();
 			updateBoxList();
 			break;
-		case A_MAKE_TEXTBOX:
+		case A_MAKE_BOXES:
 			updateCurrentBox();
 			BufferedImage boxesImage = new BufferedImage(608, 128 * boxes.size() + 2 * (boxes.size() - 1),
 					BufferedImage.TYPE_4BYTE_ABGR);
@@ -446,10 +455,14 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			}
 			JFrame previewFrame = new JFrame();
 			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			final Dimension size = new Dimension(636, 128 * 5 + 2 * 4 + 40);
+			final int extraHeight = 72;
+			final Dimension size = new Dimension(652, boxesImage.getHeight() + extraHeight);
+			final int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
+			if (size.height > maxHeight)
+				size.height = maxHeight + 16;
+			previewFrame.setMinimumSize(size);
 			previewFrame.setPreferredSize(size);
 			previewFrame.setMaximumSize(size);
-			previewFrame.setMinimumSize(size);
 			previewFrame.setResizable(false);
 			previewFrame.add(new PreviewPanel(boxesImage));
 			previewFrame.pack();
@@ -466,12 +479,14 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
 		if (e.getSource().equals(boxSelect)) {
-			updateCurrentBox();
+			if (faceSelect != null && textArea != null)
+				updateCurrentBox();
 			int sel = boxSelect.getSelectedIndex();
 			if (sel < 0)
 				return;
 			currentBox = sel;
-			updateBoxComponents();
+			if (faceSelect != null && textArea != null)
+				updateBoxComponents();
 		}
 	}
 
