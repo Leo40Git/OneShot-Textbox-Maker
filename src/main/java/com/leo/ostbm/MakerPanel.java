@@ -111,9 +111,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public MakerPanel() {
 		currentBox = 0;
 		boxes = new LinkedList<>();
-		for (int i = 0; i < 6; i++) {
-			boxes.add(new Textbox("Test " + (i + 1)));
-		}
+		boxes.add(new Textbox());
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BorderLayout());
 		JPanel boxSelectPanel = new JPanel();
@@ -141,7 +139,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		updateBoxList();
 		JScrollPane scroll = new JScrollPane(boxSelect);
 		boxSelectPanel.add(scroll, BorderLayout.CENTER);
-		add(boxSelectPanel, BorderLayout.WEST);
+		add(boxSelectPanel, BorderLayout.LINE_START);
 		JPanel boxEditPanel = new JPanel();
 		boxEditPanel.setLayout(new BorderLayout());
 		boxEditPanel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
