@@ -5,11 +5,15 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
@@ -23,6 +27,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Vector;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -32,6 +37,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,12 +45,16 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -56,7 +66,7 @@ import com.google.gson.reflect.TypeToken;
 import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
 
-public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener {
+public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener, ItemListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -67,8 +77,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	public static final String A_FACE_FOLDER = "faceFolder";
 	public static final String A_CUSTOM_FACE = "customFace";
-	public static final String A_REMOVE_BOX = "removeBox";
 	public static final String A_ADD_BOX = "addBox";
+	public static final String A_INSERT_BOX_BEFORE = "insertBoxBefore";
+	public static final String A_INSERT_BOX_AFTER = "insertBoxAfter";
+	public static final String A_MOVE_BOX_UP = "moveBoxUp";
+	public static final String A_MOVE_BOX_DOWN = "moveBoxDown";
+	public static final String A_REMOVE_BOX = "removeBox";
 	public static final String A_MAKE_BOXES = "makeBoxes";
 
 	class Textbox {
@@ -91,12 +105,14 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		@Override
 		public String toString() {
 			String t = text;
-			t = t.trim().replace('\n', ' ');
-			final int maxLen = 26;
+			t = t.replace('\n', ' ');
+			final int maxLen = 27;
 			if (t.length() > maxLen)
 				t = t.substring(0, maxLen) + "...";
 			if (t.isEmpty())
 				t = "(empty)";
+			else
+				t = "\"" + t + "\"";
 			return t;
 		}
 	}
@@ -107,7 +123,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	private JList<Textbox> boxSelect;
 	private DefaultListModel<Textbox> boxSelectModel;
-	private JButton addBoxButton, removeBoxButton;
+	private JButton addBoxButton, insertBoxBeforeButton, insertBoxAfterButton, moveBoxUpButton, moveBoxDownButton,
+			removeBoxButton;
 
 	private JComboBox<String> faceSelect;
 	private JButton openFaceFolderButton, customFaceButton;
@@ -118,23 +135,51 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		currentBox = 0;
 		boxes = new LinkedList<>();
 		boxes.add(new Textbox());
+		initPanel();
+	}
+
+	public MakerPanel(int currentBox, List<Textbox> boxes) {
+		this.currentBox = currentBox;
+		this.boxes = boxes;
+		initPanel();
+	}
+
+	private void initPanel() {
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BorderLayout());
 		JPanel boxSelectPanel = new JPanel();
 		boxSelectPanel.setLayout(new BorderLayout());
 		JPanel boxControlPanel = new JPanel();
-		boxControlPanel.setLayout(new BoxLayout(boxControlPanel, BoxLayout.LINE_AXIS));
+		boxControlPanel.setLayout(new GridLayout(1, 6));
 		addBoxButton = new JButton(Resources.getIcon(Icon.ADD_TEXTBOX));
 		addBoxButton.addActionListener(this);
 		addBoxButton.setActionCommand(A_ADD_BOX);
 		addBoxButton.setToolTipText("Add a new textbox");
-		addBoxButton.setMaximumSize(new Dimension(24, 24));
 		boxControlPanel.add(addBoxButton);
+		insertBoxBeforeButton = new JButton(Resources.getIcon(Icon.INSERT_TEXTBOX_BEFORE));
+		insertBoxBeforeButton.addActionListener(this);
+		insertBoxBeforeButton.setActionCommand(A_INSERT_BOX_BEFORE);
+		insertBoxBeforeButton.setToolTipText("Insert a textbox before the currently selected one");
+		boxControlPanel.add(insertBoxBeforeButton);
+		insertBoxAfterButton = new JButton(Resources.getIcon(Icon.INSERT_TEXTBOX_AFTER));
+		insertBoxAfterButton.addActionListener(this);
+		insertBoxAfterButton.setActionCommand(A_INSERT_BOX_AFTER);
+		insertBoxAfterButton.setToolTipText("Insert a textbox after the currently selected one");
+		boxControlPanel.add(insertBoxAfterButton);
+		moveBoxUpButton = new JButton(Resources.getIcon(Icon.MOVE_TEXTBOX_UP));
+		moveBoxUpButton.addActionListener(this);
+		moveBoxUpButton.setActionCommand(A_MOVE_BOX_UP);
+		moveBoxUpButton.setToolTipText("Move the currently selected textbox up");
+		boxControlPanel.add(moveBoxUpButton);
+		moveBoxDownButton = new JButton(Resources.getIcon(Icon.MOVE_TEXTBOX_DOWN));
+		moveBoxDownButton.addActionListener(this);
+		moveBoxDownButton.setActionCommand(A_MOVE_BOX_DOWN);
+		moveBoxDownButton.setToolTipText("Move the currently selected textbox down");
+		boxControlPanel.add(moveBoxDownButton);
 		removeBoxButton = new JButton(Resources.getIcon(Icon.REMOVE_TEXTBOX));
 		removeBoxButton.addActionListener(this);
 		removeBoxButton.setActionCommand(A_REMOVE_BOX);
-		removeBoxButton.setToolTipText("Remove the current textbox");
-		removeBoxButton.setMaximumSize(new Dimension(24, 24));
+		removeBoxButton.setToolTipText("Remove the currently selected textbox");
 		boxControlPanel.add(removeBoxButton);
 		boxSelectPanel.add(boxControlPanel, BorderLayout.PAGE_START);
 		boxSelect = new JList<>();
@@ -146,6 +191,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		JScrollPane scroll = new JScrollPane(boxSelect);
 		boxSelectPanel.add(scroll, BorderLayout.CENTER);
 		add(boxSelectPanel, BorderLayout.LINE_START);
+		Dimension bsps = boxSelectPanel.getPreferredSize();
+		boxSelectPanel.setPreferredSize(new Dimension(240, bsps.height));
 		JPanel boxEditPanel = new JPanel();
 		boxEditPanel.setLayout(new BorderLayout());
 		boxEditPanel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
@@ -155,6 +202,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		faceSelect = new JComboBox<String>();
 		faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
 		faceSelect.setSelectedItem(boxes.get(currentBox).face);
+		faceSelect.addItemListener(this);
 		faceSelect.setBackground(COLOR_TEXTBOX);
 		faceSelect.setForeground(Color.WHITE);
 		faceSelect.setRenderer(new FacesComboBoxRenderer());
@@ -184,7 +232,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		boxEditPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BorderLayout());
-		makeTextboxButton = new JButton("Make a Textbox!");
+		makeTextboxButton = new JButton("Generate Textbox(es)!");
 		makeTextboxButton.addActionListener(this);
 		makeTextboxButton.setActionCommand(A_MAKE_BOXES);
 		bottomPanel.add(makeTextboxButton, BorderLayout.PAGE_END);
@@ -192,20 +240,20 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		add(boxEditPanel, BorderLayout.CENTER);
 	}
 
-	private void updateCurrentBox() {
+	public void updateCurrentBox() {
 		Textbox box = boxes.get(currentBox);
-		box.face = faceSelect.getItemAt(faceSelect.getSelectedIndex());
+		box.face = (String) faceSelect.getSelectedItem();
 		box.text = textArea.getText();
 		boxSelect.repaint();
 	}
 
-	private void updateBoxComponents() {
+	public void updateBoxComponents() {
 		Textbox box = boxes.get(currentBox);
 		faceSelect.setSelectedItem(box.face);
 		textArea.setText(box.text);
 	}
 
-	private void updateBoxList() {
+	public void updateBoxList() {
 		boxSelectModel = new DefaultListModel<>();
 		for (Textbox b : boxes)
 			boxSelectModel.addElement(b);
@@ -335,12 +383,20 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		updateBoxList();
 	}
 
+	public List<Textbox> getBoxes() {
+		return new LinkedList<>(boxes);
+	}
+
+	public int getCurrentBox() {
+		return currentBox;
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String a = e.getActionCommand();
 		JFileChooser fc;
 		int ret;
-		Textbox box;
+		Textbox box, copyBox;
 		switch (a) {
 		case A_FACE_FOLDER:
 			if (!Desktop.isDesktopSupported())
@@ -383,35 +439,73 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			faceSelect.setModel(new DefaultComboBoxModel<>(faces));
 			faceSelect.setSelectedIndex(faces.length - 1);
 			break;
+		case A_ADD_BOX:
+			updateCurrentBox();
+			copyBox = boxes.get(boxes.size() - 1);
+			box = new Textbox();
+			box.face = copyBox.face;
+			boxes.add(box);
+			currentBox = boxes.size() - 1;
+			updateBoxComponents();
+			updateBoxList();
+			break;
+		case A_INSERT_BOX_BEFORE:
+			updateCurrentBox();
+			copyBox = boxes.get(currentBox);
+			box = new Textbox();
+			box.face = copyBox.face;
+			boxes.add(currentBox, box);
+			updateBoxComponents();
+			updateBoxList();
+			break;
+		case A_INSERT_BOX_AFTER:
+			updateCurrentBox();
+			copyBox = boxes.get(currentBox);
+			box = new Textbox();
+			box.face = copyBox.face;
+			boxes.add(++currentBox, box);
+			updateBoxComponents();
+			updateBoxList();
+			break;
+		case A_MOVE_BOX_UP:
+			updateCurrentBox();
+			box = boxes.get(currentBox);
+			boxes.remove(box);
+			currentBox--;
+			if (currentBox < 0)
+				currentBox = 0;
+			boxes.add(currentBox, box);
+			updateBoxComponents();
+			updateBoxList();
+			break;
+		case A_MOVE_BOX_DOWN:
+			updateCurrentBox();
+			box = boxes.get(currentBox);
+			boxes.remove(box);
+			currentBox++;
+			if (currentBox > boxes.size())
+				currentBox = boxes.size();
+			boxes.add(currentBox, box);
+			updateBoxComponents();
+			updateBoxList();
+			break;
 		case A_REMOVE_BOX:
 			updateCurrentBox();
-			if (!boxes.get(currentBox).text.trim().isEmpty()) {
+			box = boxes.get(currentBox);
+			if (!box.text.isEmpty()) {
 				int result = JOptionPane.showConfirmDialog(this,
 						"Are you sure you want to delete textbox " + (currentBox + 1) + "?", "Confirm deleting textbox",
 						JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				if (result != JOptionPane.YES_OPTION)
 					break;
 			}
-			if (boxes.size() == 1) {
-				box = boxes.get(currentBox);
-				box.face = Resources.FACE_BLANK;
-				box.text = "";
-			} else
-				boxes.remove(currentBox);
+			boxes.remove(box);
+			if (boxes.size() == 0)
+				boxes.add(new Textbox());
 			if (currentBox == boxes.size())
 				currentBox--;
 			if (currentBox < 0)
 				currentBox = 0;
-			updateBoxComponents();
-			updateBoxList();
-			break;
-		case A_ADD_BOX:
-			updateCurrentBox();
-			Textbox lastBox = boxes.get(boxes.size() - 1);
-			box = new Textbox();
-			box.face = lastBox.face;
-			boxes.add(box);
-			currentBox = boxes.size() - 1;
 			updateBoxComponents();
 			updateBoxList();
 			break;
@@ -420,44 +514,96 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			BufferedImage boxesImage = new BufferedImage(608, 128 * boxes.size() + 2 * (boxes.size() - 1),
 					BufferedImage.TYPE_4BYTE_ABGR);
 			Graphics big = boxesImage.getGraphics();
+			final String[] columnNames = new String[] { "Box #", "Line#", "Description" };
+			Vector<String[]> errors = new Vector<>();
 			for (int i = 0; i < boxes.size(); i++) {
 				Textbox b = boxes.get(i);
-				String text = b.text.trim();
-				if (text.isEmpty()) {
-					JOptionPane.showMessageDialog(this,
-							"Textbox " + (i + 1) + " is blank!\nPlease write something there.", "Text cannot be blank!",
-							JOptionPane.ERROR_MESSAGE);
-					return;
-				}
+				String text = b.text;
 				String[] lines = text.split("\n");
 				int linesNum = lines.length;
 				if (linesNum > 4) {
-					JOptionPane.showMessageDialog(this,
-							"Textbox " + (i + 1) + " has too many lines!\nIt has " + linesNum
-									+ " lines, but a single textbox can only fit 4 lines.",
-							"Too many lines!", JOptionPane.ERROR_MESSAGE);
-					return;
+					errors.add(new String[] { Integer.toString(i + 1), "N/A",
+							"Too many lines: has " + linesNum + " lines, but can only fit 4 lines" });
+					break;
 				}
 				int maxLen = 47;
-				String errorBit = "with a face";
+				String errorBit = "with face";
 				if (Resources.FACE_BLANK.equals(b.face)) {
 					maxLen += 10;
-					errorBit = "without a face";
+					errorBit = "without face";
 				}
 				for (int l = 0; l < lines.length; l++) {
 					int lineLen = lines[l].length();
 					if (lineLen > maxLen) {
-						JOptionPane.showMessageDialog(this,
-								"Line " + (l + 1) + " in textbox " + (i + 1) + " is too long!\nIt has " + lineLen
-										+ " characters, but textboxes " + errorBit + " can only fit " + maxLen
-										+ " characters per line.",
-								"Line too long!", JOptionPane.ERROR_MESSAGE);
-						return;
+						errors.add(new String[] { Integer.toString(i + 1), Integer.toString(l + 1),
+								"Line too long: has " + lineLen + " characters, but textboxes " + errorBit
+										+ " can only fit " + maxLen + " characters" });
+						break;
 					}
 				}
-				drawTextbox(big, b.face, text, 0, 130 * i, i < boxes.size() - 1);
+				if (errors.isEmpty())
+					drawTextbox(big, b.face, text, 0, 130 * i, i < boxes.size() - 1);
 			}
-			JFrame previewFrame = new JFrame();
+			if (!errors.isEmpty()) {
+				JTable errorTable = new JTable(new AbstractTableModel() {
+
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public int getRowCount() {
+						return errors.size();
+					}
+
+					@Override
+					public int getColumnCount() {
+						return columnNames.length;
+					}
+
+					@Override
+					public String getColumnName(int column) {
+						return columnNames[column];
+					}
+
+					@Override
+					public Object getValueAt(int rowIndex, int columnIndex) {
+						String[] row = errors.get(rowIndex);
+						return row[columnIndex];
+					}
+
+					@Override
+					public boolean isCellEditable(int rowIndex, int columnIndex) {
+						return false;
+					}
+
+				});
+				JTableHeader header = errorTable.getTableHeader();
+				header.setResizingAllowed(false);
+				header.setReorderingAllowed(false);
+				TableColumnAdjuster tca = new TableColumnAdjuster(errorTable);
+				tca.adjustColumns();
+				JDialog errFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+						"Errors while generating textbox(es)", true);
+				errFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				final Dimension size = new Dimension(652, 280);
+				errFrame.setMinimumSize(size);
+				errFrame.setPreferredSize(size);
+				errFrame.setMaximumSize(size);
+				errFrame.setResizable(false);
+				JPanel errPanel = new JPanel();
+				errPanel.setLayout(new BorderLayout());
+				errPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+				errPanel.add(new JLabel(
+						"There were errors while the textbox(es) were being generated. Please fix these errors and try again."),
+						BorderLayout.NORTH);
+				errPanel.add(new JScrollPane(errorTable), BorderLayout.CENTER);
+				errFrame.add(errPanel);
+				errFrame.pack();
+				errFrame.setLocationRelativeTo(null);
+				errFrame.setVisible(true);
+				return;
+			}
+			JDialog previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview",
+					true);
 			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			final int extraHeight = 82;
 			final Dimension size = new Dimension(652, boxesImage.getHeight() + extraHeight);
@@ -471,7 +617,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			previewFrame.add(new PreviewPanel(boxesImage));
 			previewFrame.pack();
 			previewFrame.setLocationRelativeTo(null);
-			previewFrame.setTitle("Textbox(es) preview");
 			previewFrame.setVisible(true);
 			break;
 		default:
@@ -492,6 +637,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			if (faceSelect != null && textArea != null)
 				updateBoxComponents();
 		}
+	}
+
+	@Override
+	public void itemStateChanged(ItemEvent e) {
+		if (e.getSource().equals(faceSelect))
+			updateCurrentBox();
 	}
 
 	public static BufferedImage drawTextbox(String face, String text) {
@@ -546,12 +697,15 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			}
 			String text = "<html><b>Textbox " + (index + 1) + "</b><br>" + value.toString() + "</html>";
 			setText(text);
+			ImageIcon icon = Resources.getFace(value.face).getIcon();
+			setIcon(icon);
 			// getGraphics() returns null here so we need to make our own Graphics object
 			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			Graphics2D g = ge.createGraphics(IMAGE);
 			g.setFont(getFont());
 			Rectangle2D bounds = g.getFontMetrics().getStringBounds(text, g);
-			setPreferredSize(new Dimension(200, (int) bounds.getHeight() + g.getFontMetrics().getHeight()));
+			setPreferredSize(new Dimension(100 + icon.getIconWidth(),
+					Math.max((int) bounds.getHeight() + g.getFontMetrics().getHeight(), icon.getIconHeight())));
 			return this;
 		}
 
@@ -607,34 +761,45 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			addKeyListener(new KeyAdapter() {
 				@Override
 				public void keyReleased(KeyEvent e) {
-					int maxLen = 57;
-					if (faceSelect.getSelectedItem() != Resources.FACE_BLANK)
-						maxLen -= 10;
-					Highlighter hl = getHighlighter();
-					hl.removeAllHighlights();
-					HighlightPainter p = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
-					String[] lines = getText().split("\n");
-					for (int i = 0; i < lines.length; i++) {
-						int start = 0, end = 0;
-						try {
-							start = getLineStartOffset(i);
-							end = getLineEndOffset(i);
-						} catch (BadLocationException e2) {
-							e2.printStackTrace();
-						}
-						try {
-							if (i > 3) {
-								hl.addHighlight(start, end, p);
-							} else if (lines[i].length() > maxLen) {
-								hl.addHighlight(start + maxLen, end, p);
-							}
-						} catch (BadLocationException e1) {
-							e1.printStackTrace();
-						}
-					}
-					repaint();
+					updateCurrentBox();
+					highlight();
 				}
 			});
+		}
+
+		@Override
+		public void setText(String t) {
+			super.setText(t);
+			highlight();
+		}
+
+		private void highlight() {
+			int maxLen = 57;
+			if (faceSelect.getSelectedItem() != Resources.FACE_BLANK)
+				maxLen -= 10;
+			Highlighter hl = getHighlighter();
+			hl.removeAllHighlights();
+			HighlightPainter p = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
+			String[] lines = getText().split("\n");
+			for (int i = 0; i < lines.length; i++) {
+				int start = 0, end = 0;
+				try {
+					start = getLineStartOffset(i);
+					end = getLineEndOffset(i);
+				} catch (BadLocationException e2) {
+					e2.printStackTrace();
+				}
+				try {
+					if (i > 3) {
+						hl.addHighlight(start, end, p);
+					} else if (lines[i].length() > maxLen) {
+						hl.addHighlight(start + maxLen, end, p);
+					}
+				} catch (BadLocationException e1) {
+					e1.printStackTrace();
+				}
+			}
+			repaint();
 		}
 
 	}

@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -25,7 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class PreviewPanel extends JPanel implements ActionListener, ClipboardOwner {
+public class PreviewPanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -69,12 +68,7 @@ public class PreviewPanel extends JPanel implements ActionListener, ClipboardOwn
 		switch (cmd) {
 		case A_COPY_BOXES:
 			Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
-			if (cb == null) {
-				// TODO error popup
-				System.err.println("clipboard not supported");
-				break;
-			}
-			cb.setContents(new TransferableImage(image), this);
+			cb.setContents(new TransferableImage(image), null);
 			break;
 		case A_SAVE_BOXES:
 			File sel = Main.openFileDialog(true, this, "Save textbox(es) image",
@@ -118,17 +112,12 @@ public class PreviewPanel extends JPanel implements ActionListener, ClipboardOwn
 
 		public boolean isDataFlavorSupported(DataFlavor flavor) {
 			DataFlavor[] flavors = getTransferDataFlavors();
-			for (int i = 0; i < flavors.length; i++) {
-				if (flavor.equals(flavors[i])) {
+			for (DataFlavor supported : flavors) {
+				if (flavor.equals(supported)) {
 					return true;
 				}
 			}
-
 			return false;
 		}
-	}
-
-	@Override
-	public void lostOwnership(Clipboard clipboard, Transferable contents) {
 	}
 }

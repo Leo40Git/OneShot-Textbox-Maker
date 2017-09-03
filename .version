@@ -1,5 +1,6 @@
-1.4.1
-Hotfix 1.4.1
-- Added confirmation to exiting
-Update 1.4: Project-ile!
-- Save & load projects, which contain the textbox(es)'s data.
+1.5
+1.5: The UI Update
+- Improved textbox navigation by using a list to select textbox instead of navigation buttons
+- Added OOB text highlighting
+- Added copying textbox image to clipboard
+- Added settings, currently only used to toggle Solstice facepic hiding

@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -78,7 +80,12 @@ public class Resources {
 		FACE_FOLDER("Open Facepic Folder"),
 		ADD_FACE("Add Custom Facepic"),
 		ADD_TEXTBOX("Add Textbox"),
-		REMOVE_TEXTBOX("Remove Textbox");
+		REMOVE_TEXTBOX("Remove Textbox"),
+		INSERT_TEXTBOX_BEFORE("Insert Textbox Before"),
+		INSERT_TEXTBOX_AFTER("Insert Textbox After"),
+		MOVE_TEXTBOX_UP("Move Textbox Up"),
+		MOVE_TEXTBOX_DOWN("Move Textbox Down"),
+		SETTINGS("Settings");
 
 		String description;
 
@@ -91,6 +98,7 @@ public class Resources {
 		}
 	}
 
+	private static List<BufferedImage> appIcons;
 	private static Map<Icon, ImageIcon> icons;
 	private static BufferedImage box;
 	private static BufferedImage arrow;
@@ -115,6 +123,10 @@ public class Resources {
 	public static void initImages() throws IOException, URISyntaxException {
 		box = ImageIO.read(new File("res/box.png"));
 		arrow = ImageIO.read(new File("res/arrow.png"));
+		appIcons = new LinkedList<>();
+		final String[] sizes = new String[] { "16", "32", "64" };
+		for (String size : sizes)
+			appIcons.add(ImageIO.read(Resources.class.getResourceAsStream("/appicon" + size + ".png")));
 		BufferedImage iconSheet = ImageIO.read(Resources.class.getResourceAsStream("/icons.png"));
 		icons = new HashMap<>();
 		int ix = 0, iy = 0;
@@ -126,6 +138,11 @@ public class Resources {
 				iy += 16;
 			}
 		}
+		initFaces();
+	}
+
+	public static void initFaces() throws IOException {
+		loadingCustom = false;
 		faces = new HashMap<>();
 		addFace(FACE_BLANK, null, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
 		File facesFolder = new File("res/faces");
@@ -135,7 +152,7 @@ public class Resources {
 					"Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
 			System.exit(1);
 		}
-		addFaces(facesFolder, false);
+		addFaces(facesFolder, Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
 		sortFaces();
 		loadingCustom = true;
 	}
@@ -150,6 +167,10 @@ public class Resources {
 
 	public static BufferedImage getArrow() {
 		return arrow;
+	}
+
+	public static List<BufferedImage> getAppIcons() {
+		return appIcons;
 	}
 
 	public static ImageIcon getIcon(Icon icon) {

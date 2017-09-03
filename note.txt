@@ -1,6 +1,7 @@
 -- OneShot Textbox Maker (OBSTM) --
 
 WARNING! This application contains spoilers for Solstice (if you count facepics as spoilers)!
+As such, these facepics are hidden by default. Go to File > Settings to unhide them.
 
 To add facepics, simply add the facepic image to the "faces" folder in the "res" folder, or any subfolder inside that folder!
 

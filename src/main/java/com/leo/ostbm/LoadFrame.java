@@ -37,6 +37,7 @@ public class LoadFrame extends JFrame {
 		pack();
 		setLocationRelativeTo(null);
 		setVisible(true);
+		requestFocus();
 	}
 
 }

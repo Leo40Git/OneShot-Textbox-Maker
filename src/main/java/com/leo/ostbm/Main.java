@@ -24,7 +24,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -40,6 +45,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.leo.ostbm.MakerPanel.Textbox;
 import com.leo.ostbm.Resources.Icon;
 
 public class Main {
@@ -49,13 +55,14 @@ public class Main {
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
 
-	public static final String A_FILE_NEW = "file_new";
-	public static final String A_FILE_LOAD = "file_load";
-	public static final String A_FILE_SAVE = "file_save";
-	public static final String A_FILE_SAVE_AS = "file_save_as";
-	public static final String A_FILE_EXIT = "file_exit";
-	public static final String A_QUESTION_UPDATE = "question_update";
-	public static final String A_QUESTION_ABOUT = "question_about";
+	public static final String A_FILE_NEW = "file:new";
+	public static final String A_FILE_LOAD = "file:load";
+	public static final String A_FILE_SAVE = "file:save";
+	public static final String A_FILE_SAVE_AS = "file:saveAs";
+	public static final String A_FILE_SETTINGS = "file:settings";
+	public static final String A_FILE_EXIT = "file:exit";
+	public static final String A_QUESTION_UPDATE = "question:update";
+	public static final String A_QUESTION_ABOUT = "question:about";
 
 	private static JFrame frame;
 	private static MakerPanel panel;
@@ -106,7 +113,7 @@ public class Main {
 				try {
 					panel.newProjectFile();
 				} catch (IOException e1) {
-					fileError(cmd, e1, "New project failed", "Could not create new project!");
+					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
 			case A_FILE_LOAD:
@@ -133,12 +140,17 @@ public class Main {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
+			case A_FILE_SETTINGS:
+				openSettings();
+				break;
 			case A_FILE_EXIT:
 				close();
 				break;
 			// "?" Menu
 			case A_QUESTION_UPDATE:
-				Main.updateCheck(true, true);
+				SwingUtilities.invokeLater(() -> {
+					Main.updateCheck(true, true);
+				});
 				break;
 			case A_QUESTION_ABOUT:
 				JOptionPane.showMessageDialog(frame,
@@ -232,7 +244,7 @@ public class Main {
 			frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 			frame.addWindowListener(new ConfirmCloseWindowListener());
-			final Dimension size = new Dimension(800, 600);
+			final Dimension size = new Dimension(880, 600);
 			frame.setPreferredSize(size);
 			frame.setMaximumSize(size);
 			frame.setMinimumSize(size);
@@ -244,6 +256,7 @@ public class Main {
 			frame.pack();
 			frame.setLocationRelativeTo(null);
 			frame.setTitle("OneShot Textbox Maker v" + VERSION);
+			frame.setIconImages(Resources.getAppIcons());
 			frame.setVisible(true);
 			frame.requestFocus();
 			loadFrame.dispose();
@@ -273,6 +286,11 @@ public class Main {
 		miFileSaveAs.addActionListener(l);
 		miFileSaveAs.setActionCommand(A_FILE_SAVE_AS);
 		mFile.add(miFileSaveAs);
+		mFile.addSeparator();
+		JMenuItem miFileSettings = new JMenuItem("Settings", Resources.getIcon(Icon.SETTINGS));
+		miFileSettings.addActionListener(l);
+		miFileSettings.setActionCommand(A_FILE_SETTINGS);
+		mFile.add(miFileSettings);
 		mFile.addSeparator();
 		JMenuItem miFileExit = new JMenuItem("Exit OBSTM", Resources.getIcon(Icon.EXIT));
 		miFileExit.addActionListener(l);
@@ -340,7 +358,6 @@ public class Main {
 
 	public static LoadFrame updateCheck(boolean disposeOfLoadFrame, boolean showUpToDate) {
 		LoadFrame loadFrame = new LoadFrame();
-		loadFrame.requestFocus();
 		File verFile = new File(System.getProperty("user.dir") + "/temp.version");
 		System.out.println("Update check: starting");
 		try {
@@ -444,6 +461,50 @@ public class Main {
 				return fc.getSelectedFile();
 		}
 		return null;
+	}
+
+	private static void openSettings() {
+		JDialog settingsFrame = new JDialog(frame, "Settings", true);
+		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		JPanel settingsPanel = new JPanel();
+		settingsPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		JPanel spoilerPanel = new JPanel();
+		spoilerPanel.setLayout(new BoxLayout(spoilerPanel, BoxLayout.PAGE_AXIS));
+		spoilerPanel.setBorder(BorderFactory.createTitledBorder("Spoilers"));
+		spoilerPanel.add(new JLabel(
+				"<html>By default, OSTBM hides facepics that are exclusive to the Solstice route to prevent spoilers.<br>Please note that changing this will reload all facepics and <b>remove all custom facepics</b>.</html>"));
+		JCheckBox solsticeFacepics = new JCheckBox("Hide Solstice facepics",
+				Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
+		solsticeFacepics.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Config.setBoolean(Config.KEY_HIDE_SOLSTICE_FACES, solsticeFacepics.isSelected());
+				try {
+					panel.updateCurrentBox();
+					System.out.println("Done");
+					int currentBox = panel.getCurrentBox();
+					List<Textbox> boxes = panel.getBoxes();
+					frame.remove(panel);
+					Resources.initFaces();
+					for (Textbox box : boxes)
+						if (Resources.getFace(box.face) == null)
+							box.face = Resources.FACE_BLANK;
+					panel = new MakerPanel(currentBox, boxes);
+					frame.add(panel);
+					frame.pack();
+					frame.repaint();
+				} catch (IOException e1) {
+					resourceError(e1);
+				}
+			}
+		});
+		spoilerPanel.add(solsticeFacepics);
+		settingsPanel.add(spoilerPanel);
+		settingsFrame.add(settingsPanel);
+		settingsFrame.pack();
+		settingsFrame.setLocationRelativeTo(null);
+		settingsFrame.setIconImage(Resources.getIcon(Icon.SETTINGS).getImage());
+		settingsFrame.setVisible(true);
 	}
 
 }
