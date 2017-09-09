@@ -214,7 +214,7 @@ public class Main {
 			}
 		Config.init();
 		LoadFrame loadFrame;
-		final String skipuc = "skipuc____";
+		final String skipuc = "skipuc";
 		boolean skipucF = new File(System.getProperty("user.dir") + "/" + skipuc).exists();
 		boolean skipucR = Config.getBoolean(Config.KEY_SKIP_UPDATE_CHECK, false);
 		if (skipucR) {
