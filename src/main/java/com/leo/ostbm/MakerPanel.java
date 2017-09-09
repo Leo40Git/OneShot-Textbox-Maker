@@ -8,7 +8,6 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -69,7 +68,6 @@ import javax.swing.text.Highlighter.HighlightPainter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.leo.ostbm.PreviewPanel.TransferableImage;
 import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
 
@@ -578,6 +576,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					gsw.writeToSequence(frame);
 				gsw.close();
 				out.close();
+				for (BufferedImage frame : boxFrames)
+					frame.flush();
 				ImageIcon preview = new ImageIcon(Resources.readImgFromFile(temp[0].getName(), this));
 				previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
 				previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -610,8 +610,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						}
 						break;
 					case PreviewPanel.A_COPY_BOXES:
+						/*
 						Toolkit.getDefaultToolkit().getSystemClipboard()
 								.setContents(new TransferableImage(preview.getImage()), null);
+								*/
+						JOptionPane.showMessageDialog(this, "Can't copy animated textboxes to your clipboard yet...",
+								"Not yet supported!", JOptionPane.ERROR_MESSAGE);
 						break;
 					default:
 						System.out.println("Undefined action: " + cmd);
