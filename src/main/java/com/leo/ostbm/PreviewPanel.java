@@ -38,6 +38,15 @@ public class PreviewPanel extends JPanel implements ActionListener {
 	public PreviewPanel(BufferedImage image) {
 		this.image = image;
 		previewImage = new ImageIcon(image, "textbox(es) preview");
+		initPanel(this);
+	}
+	
+	public PreviewPanel(ImageIcon previewImage, ActionListener l) {
+		this.previewImage = previewImage;
+		initPanel(l);
+	}
+	
+	private void initPanel(ActionListener l) {
 		setLayout(new BorderLayout());
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		JPanel previewPanel = new JPanel();
@@ -49,12 +58,12 @@ public class PreviewPanel extends JPanel implements ActionListener {
 		add(previewScroll, BorderLayout.CENTER);
 		JPanel buttonPanel = new JPanel();
 		copyButton = new JButton("Copy to Clipboard");
-		copyButton.addActionListener(this);
+		copyButton.addActionListener(l);
 		copyButton.setActionCommand(A_COPY_BOXES);
 		copyButton.setToolTipText("Copy this textbox (or these textboxes) to the clipboard");
 		buttonPanel.add(copyButton);
 		saveButton = new JButton("Save to File");
-		saveButton.addActionListener(this);
+		saveButton.addActionListener(l);
 		saveButton.setActionCommand(A_SAVE_BOXES);
 		saveButton.setToolTipText("Save this textbox (or these textboxes) as an image");
 		saveButton.setPreferredSize(copyButton.getPreferredSize());
@@ -88,7 +97,7 @@ public class PreviewPanel extends JPanel implements ActionListener {
 		}
 	}
 
-	class TransferableImage implements Transferable {
+	public static class TransferableImage implements Transferable {
 
 		Image i;
 

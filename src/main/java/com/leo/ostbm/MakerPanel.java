@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -23,11 +24,18 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
@@ -61,6 +69,7 @@ import javax.swing.text.Highlighter.HighlightPainter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.leo.ostbm.PreviewPanel.TransferableImage;
 import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
 
@@ -82,6 +91,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public static final String A_MOVE_BOX_DOWN = "moveBoxDown";
 	public static final String A_REMOVE_BOX = "removeBox";
 	public static final String A_MAKE_BOXES = "makeBoxes";
+	public static final String A_MAKE_BOXES_ANIM = "makeBoxesAnim";
 
 	class Textbox {
 		public String face;
@@ -126,7 +136,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	private JComboBox<String> faceSelect;
 	private JButton openFaceFolderButton, customFaceButton;
 	private JTextArea textArea;
-	private JButton makeTextboxButton;
+	private JButton makeTextboxButton, makeTextboxAnimButton;
 
 	public MakerPanel() {
 		currentBox = 0;
@@ -138,6 +148,11 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	private void initPanel() {
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BorderLayout());
+		initBoxSelectPanel();
+		initBoxEditPanel();
+	}
+
+	private void initBoxSelectPanel() {
 		JPanel boxSelectPanel = new JPanel();
 		boxSelectPanel.setLayout(new BorderLayout());
 		JPanel boxControlPanel = new JPanel();
@@ -183,6 +198,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		add(boxSelectPanel, BorderLayout.LINE_START);
 		Dimension bsps = boxSelectPanel.getPreferredSize();
 		boxSelectPanel.setPreferredSize(new Dimension(240, bsps.height));
+	}
+
+	private void initBoxEditPanel() {
 		JPanel boxEditPanel = new JPanel();
 		boxEditPanel.setLayout(new BorderLayout());
 		boxEditPanel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
@@ -220,11 +238,15 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		textArea.setCaretColor(Color.WHITE);
 		boxEditPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
 		JPanel bottomPanel = new JPanel();
-		bottomPanel.setLayout(new BorderLayout());
+		bottomPanel.setLayout(new GridLayout(1, 2));
 		makeTextboxButton = new JButton("Generate Textbox(es)!");
 		makeTextboxButton.addActionListener(this);
 		makeTextboxButton.setActionCommand(A_MAKE_BOXES);
-		bottomPanel.add(makeTextboxButton, BorderLayout.PAGE_END);
+		bottomPanel.add(makeTextboxButton);
+		makeTextboxAnimButton = new JButton("<html>Generate Animated Textbox(es)!<sup>beta</sup></html>");
+		makeTextboxAnimButton.addActionListener(this);
+		makeTextboxAnimButton.setActionCommand(A_MAKE_BOXES_ANIM);
+		bottomPanel.add(makeTextboxAnimButton);
 		boxEditPanel.add(bottomPanel, BorderLayout.PAGE_END);
 		add(boxEditPanel, BorderLayout.CENTER);
 	}
@@ -395,6 +417,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		JFileChooser fc;
 		int ret;
 		Textbox box, copyBox;
+		JDialog previewFrame;
+		int extraHeight, maxHeight;
+		Dimension size;
 		switch (a) {
 		case A_FACE_FOLDER:
 			if (!Desktop.isDesktopSupported())
@@ -512,100 +537,18 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			BufferedImage boxesImage = new BufferedImage(608, 128 * boxes.size() + 2 * (boxes.size() - 1),
 					BufferedImage.TYPE_4BYTE_ABGR);
 			Graphics big = boxesImage.getGraphics();
-			final String[] columnNames = new String[] { "Box #", "Line#", "Description" };
-			Vector<String[]> errors = new Vector<>();
-			for (int i = 0; i < boxes.size(); i++) {
-				Textbox b = boxes.get(i);
-				String text = b.text;
-				String[] lines = text.split("\n");
-				int linesNum = lines.length;
-				if (linesNum > 4) {
-					errors.add(new String[] { Integer.toString(i + 1), "N/A",
-							"Too many lines: has " + linesNum + " lines, but can only fit 4 lines" });
-					break;
+			if (checkTextboxes())
+				for (int i = 0; i < boxes.size(); i++) {
+					Textbox b = boxes.get(i);
+					drawTextbox(big, b.face, b.text, 0, 130 * i, i < boxes.size() - 1);
 				}
-				int maxLen = 47;
-				String errorBit = "with face";
-				if (Resources.FACE_BLANK.equals(b.face)) {
-					maxLen += 10;
-					errorBit = "without face";
-				}
-				for (int l = 0; l < lines.length; l++) {
-					int lineLen = lines[l].length();
-					if (lineLen > maxLen) {
-						errors.add(new String[] { Integer.toString(i + 1), Integer.toString(l + 1),
-								"Line too long: has " + lineLen + " characters, but textboxes " + errorBit
-										+ " can only fit " + maxLen + " characters" });
-						break;
-					}
-				}
-				if (errors.isEmpty())
-					drawTextbox(big, b.face, text, 0, 130 * i, i < boxes.size() - 1);
-			}
-			if (!errors.isEmpty()) {
-				JTable errorTable = new JTable(new AbstractTableModel() {
-
-					private static final long serialVersionUID = 1L;
-
-					@Override
-					public int getRowCount() {
-						return errors.size();
-					}
-
-					@Override
-					public int getColumnCount() {
-						return columnNames.length;
-					}
-
-					@Override
-					public String getColumnName(int column) {
-						return columnNames[column];
-					}
-
-					@Override
-					public Object getValueAt(int rowIndex, int columnIndex) {
-						String[] row = errors.get(rowIndex);
-						return row[columnIndex];
-					}
-
-					@Override
-					public boolean isCellEditable(int rowIndex, int columnIndex) {
-						return false;
-					}
-
-				});
-				JTableHeader header = errorTable.getTableHeader();
-				header.setResizingAllowed(false);
-				header.setReorderingAllowed(false);
-				TableColumnAdjuster tca = new TableColumnAdjuster(errorTable);
-				tca.adjustColumns();
-				JDialog errFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
-						"Errors while generating textbox(es)", true);
-				errFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				final Dimension size = new Dimension(652, 280);
-				errFrame.setMinimumSize(size);
-				errFrame.setPreferredSize(size);
-				errFrame.setMaximumSize(size);
-				errFrame.setResizable(false);
-				JPanel errPanel = new JPanel();
-				errPanel.setLayout(new BorderLayout());
-				errPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-				errPanel.add(new JLabel(
-						"There were errors while the textbox(es) were being generated. Please fix these errors and try again."),
-						BorderLayout.NORTH);
-				errPanel.add(new JScrollPane(errorTable), BorderLayout.CENTER);
-				errFrame.add(errPanel);
-				errFrame.pack();
-				errFrame.setLocationRelativeTo(null);
-				errFrame.setVisible(true);
+			else
 				return;
-			}
-			JDialog previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview",
-					true);
+			previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
 			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			final int extraHeight = 82;
-			final Dimension size = new Dimension(652, boxesImage.getHeight() + extraHeight);
-			final int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
+			extraHeight = 82;
+			size = new Dimension(652, boxesImage.getHeight() + extraHeight);
+			maxHeight = 128 * 5 + 2 * 4 + extraHeight;
 			if (size.height > maxHeight)
 				size.height = maxHeight + 16;
 			previewFrame.setMinimumSize(size);
@@ -617,10 +560,166 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			previewFrame.setLocationRelativeTo(null);
 			previewFrame.setVisible(true);
 			break;
+		case A_MAKE_BOXES_ANIM:
+			updateCurrentBox();
+			if (!checkTextboxes())
+				return;
+			final File[] temp = new File[1];
+			try {
+				List<BufferedImage> boxFrames = new ArrayList<>();
+				for (int i = 0; i < boxes.size(); i++) {
+					Textbox b = boxes.get(i);
+					boxFrames.addAll(makeTextboxAnimation(b));
+				}
+				temp[0] = new File("tmp.gif");
+				ImageOutputStream out = new FileImageOutputStream(temp[0]);
+				GifSequenceWriter gsw = new GifSequenceWriter(out, boxFrames.get(0).getType(), 1, true);
+				for (BufferedImage frame : boxFrames)
+					gsw.writeToSequence(frame);
+				gsw.close();
+				out.close();
+				ImageIcon preview = new ImageIcon(Resources.readImgFromFile(temp[0].getName(), this));
+				previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
+				previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				extraHeight = 82;
+				size = new Dimension(652, boxFrames.get(0).getHeight() + extraHeight);
+				maxHeight = 128 * 5 + 2 * 4 + extraHeight;
+				if (size.height > maxHeight)
+					size.height = maxHeight + 16;
+				previewFrame.setMinimumSize(size);
+				previewFrame.setPreferredSize(size);
+				previewFrame.setMaximumSize(size);
+				previewFrame.setResizable(false);
+				previewFrame.add(new PreviewPanel(preview, (ActionEvent ae) -> {
+					String cmd = ae.getActionCommand();
+					switch (cmd) {
+					case PreviewPanel.A_SAVE_BOXES:
+						File sel = Main.openFileDialog(true, this, "Save textbox(es) animation",
+								new FileNameExtensionFilter("GIF files", "gif"));
+						if (sel == null)
+							return;
+						Path src = Paths.get(temp[0].getAbsolutePath());
+						Path dst = Paths.get(sel.getAbsolutePath());
+						try {
+							Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(this,
+									"An exception occured while saving the animation:\n" + e1,
+									"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
+						}
+						break;
+					case PreviewPanel.A_COPY_BOXES:
+						Toolkit.getDefaultToolkit().getSystemClipboard()
+								.setContents(new TransferableImage(preview.getImage()), null);
+						break;
+					default:
+						System.out.println("Undefined action: " + cmd);
+						break;
+					}
+				}));
+				previewFrame.pack();
+				previewFrame.setLocationRelativeTo(null);
+				previewFrame.setVisible(true);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				JOptionPane.showMessageDialog(this, "An exception occured while saving the animation:\n" + e1,
+						"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
+			}
+			break;
 		default:
 			System.out.println("Undefined action: " + a);
 			break;
 		}
+	}
+
+	private boolean checkTextboxes() {
+		final String[] columnNames = new String[] { "Box #", "Line#", "Description" };
+		Vector<String[]> errors = new Vector<>();
+		for (int i = 0; i < boxes.size(); i++) {
+			Textbox b = boxes.get(i);
+			String text = b.text;
+			String[] lines = text.split("\n");
+			int linesNum = lines.length;
+			if (linesNum > 4) {
+				errors.add(new String[] { Integer.toString(i + 1), "N/A",
+						"Too many lines: has " + linesNum + " lines, but can only fit 4 lines" });
+				break;
+			}
+			int maxLen = 47;
+			String errorBit = "with face";
+			if (Resources.FACE_BLANK.equals(b.face)) {
+				maxLen += 10;
+				errorBit = "without face";
+			}
+			for (int l = 0; l < lines.length; l++) {
+				int lineLen = lines[l].length();
+				if (lineLen > maxLen) {
+					errors.add(new String[] { Integer.toString(i + 1), Integer.toString(l + 1),
+							"Line too long: has " + lineLen + " characters, but textboxes " + errorBit
+									+ " can only fit " + maxLen + " characters" });
+					break;
+				}
+			}
+			if (errors.isEmpty())
+				return true;
+		}
+		JTable errorTable = new JTable(new AbstractTableModel() {
+
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public int getRowCount() {
+				return errors.size();
+			}
+
+			@Override
+			public int getColumnCount() {
+				return columnNames.length;
+			}
+
+			@Override
+			public String getColumnName(int column) {
+				return columnNames[column];
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex) {
+				String[] row = errors.get(rowIndex);
+				return row[columnIndex];
+			}
+
+			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex) {
+				return false;
+			}
+
+		});
+		JTableHeader header = errorTable.getTableHeader();
+		header.setResizingAllowed(false);
+		header.setReorderingAllowed(false);
+		TableColumnAdjuster tca = new TableColumnAdjuster(errorTable);
+		tca.adjustColumns();
+		JDialog errFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+				"Errors while generating textbox(es)", true);
+		errFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		final Dimension size = new Dimension(652, 280);
+		errFrame.setMinimumSize(size);
+		errFrame.setPreferredSize(size);
+		errFrame.setMaximumSize(size);
+		errFrame.setResizable(false);
+		JPanel errPanel = new JPanel();
+		errPanel.setLayout(new BorderLayout());
+		errPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		errPanel.add(new JLabel(
+				"There were errors while the textbox(es) were being generated. Please fix these errors and try again."),
+				BorderLayout.NORTH);
+		errPanel.add(new JScrollPane(errorTable), BorderLayout.CENTER);
+		errFrame.add(errPanel);
+		errFrame.pack();
+		errFrame.setLocationRelativeTo(null);
+		errFrame.setVisible(true);
+		return false;
 	}
 
 	@Override
@@ -652,9 +751,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	public static void drawTextbox(Graphics g, String face, String text, int x, int y, boolean drawArrow) {
 		g.drawImage(Resources.getBox(), x, y, null);
-		BufferedImage faceImage = Resources.getFace(face).getImage();
-		if (faceImage != null)
-			g.drawImage(faceImage, x + 496, y + 16, null);
+		Facepic faceObj = Resources.getFace(face);
+		if (faceObj != null)
+			g.drawImage(faceObj.getImage(), x + 496, y + 16, null);
 		if (drawArrow)
 			g.drawImage(Resources.getArrow(), x + 299, y + 118, null);
 		drawTextboxString(g, text, x + 20, y + 10);
@@ -668,6 +767,19 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			y += lineSpace;
 			g.drawString(line, x, y);
 		}
+	}
+
+	public static List<BufferedImage> makeTextboxAnimation(Textbox box) {
+		List<BufferedImage> ret = new ArrayList<>();
+		String text = box.text;
+		for (int i = 0; i < text.length() + 1; i++) {
+			ret.add(drawTextbox(box.face, text.substring(0, i)));
+		}
+		int lastFrame = ret.size() - 1;
+		// duplicate last frame a few times
+		for (int i = 0; i < 30; i++)
+			ret.add(ret.get(lastFrame));
+		return ret;
 	}
 
 	static class TextboxListRenderer extends JLabel implements ListCellRenderer<Textbox> {
