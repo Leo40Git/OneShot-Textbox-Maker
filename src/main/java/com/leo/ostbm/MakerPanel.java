@@ -559,16 +559,17 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			previewFrame.setVisible(true);
 			break;
 		case A_MAKE_BOXES_ANIM:
+			/*
+			TODO
+			A. Make this entire section more efficient (will probably need to make my own GIF encoder)
+			B. Fix copying to clipboard (using files maybe?)
+			*/
 			updateCurrentBox();
 			if (!checkTextboxes())
 				return;
 			final File[] temp = new File[1];
 			try {
-				List<BufferedImage> boxFrames = new ArrayList<>();
-				for (int i = 0; i < boxes.size(); i++) {
-					Textbox b = boxes.get(i);
-					boxFrames.addAll(makeTextboxAnimation(b));
-				}
+				List<BufferedImage> boxFrames = makeTextboxAnimation(boxes);
 				temp[0] = new File("tmp.gif");
 				ImageOutputStream out = new FileImageOutputStream(temp[0]);
 				GifSequenceWriter gsw = new GifSequenceWriter(out, boxFrames.get(0).getType(), 1, true);
@@ -746,10 +747,10 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			updateCurrentBox();
 	}
 
-	public static BufferedImage drawTextbox(String face, String text) {
+	public static BufferedImage drawTextbox(String face, String text, boolean drawArrow) {
 		BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = ret.getGraphics();
-		drawTextbox(g, face, text, 0, 0, false);
+		drawTextbox(g, face, text, 0, 0, drawArrow);
 		return ret;
 	}
 
@@ -773,16 +774,19 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		}
 	}
 
-	public static List<BufferedImage> makeTextboxAnimation(Textbox box) {
+	public static List<BufferedImage> makeTextboxAnimation(List<Textbox> boxes) {
 		List<BufferedImage> ret = new ArrayList<>();
-		String text = box.text;
-		for (int i = 0; i < text.length() + 1; i++) {
-			ret.add(drawTextbox(box.face, text.substring(0, i)));
+		for (int i = 0; i < boxes.size(); i++) {
+			Textbox box = boxes.get(i);
+			String text = box.text;
+			for (int l = 0; l < text.length() + 1; l++) {
+				ret.add(drawTextbox(box.face, text.substring(0, l), i < boxes.size() - 1 && l == text.length()));
+			}
+			int lastFrame = ret.size() - 1;
+			// duplicate last frame a few times
+			for (int j = 0; j < 30; j++)
+				ret.add(ret.get(lastFrame));
 		}
-		int lastFrame = ret.size() - 1;
-		// duplicate last frame a few times
-		for (int i = 0; i < 30; i++)
-			ret.add(ret.get(lastFrame));
 		return ret;
 	}
 
