@@ -7,8 +7,6 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -122,7 +120,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	private List<Textbox> boxes;
 
 	private JList<Textbox> boxSelect;
-	private DefaultListModel<Textbox> boxSelectModel;
 	private JButton addBoxButton, insertBoxBeforeButton, insertBoxAfterButton, moveBoxUpButton, moveBoxDownButton,
 			removeBoxButton;
 
@@ -135,12 +132,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		currentBox = 0;
 		boxes = new LinkedList<>();
 		boxes.add(new Textbox());
-		initPanel();
-	}
-
-	public MakerPanel(int currentBox, List<Textbox> boxes) {
-		this.currentBox = currentBox;
-		this.boxes = boxes;
 		initPanel();
 	}
 
@@ -186,7 +177,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		boxSelect.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		boxSelect.addListSelectionListener(this);
 		boxSelect.setCellRenderer(new TextboxListRenderer());
-		boxSelectModel = new DefaultListModel<>();
 		updateBoxList();
 		JScrollPane scroll = new JScrollPane(boxSelect);
 		boxSelectPanel.add(scroll, BorderLayout.CENTER);
@@ -200,8 +190,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		faceSelectPanel.setLayout(new BoxLayout(faceSelectPanel, BoxLayout.LINE_AXIS));
 		faceSelectPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 		faceSelect = new JComboBox<String>();
-		faceSelect.setModel(new DefaultComboBoxModel<>(Resources.getFaces()));
-		faceSelect.setSelectedItem(boxes.get(currentBox).face);
+		updateFaces();
 		faceSelect.addItemListener(this);
 		faceSelect.setBackground(COLOR_TEXTBOX);
 		faceSelect.setForeground(Color.WHITE);
@@ -254,11 +243,20 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	}
 
 	public void updateBoxList() {
-		boxSelectModel = new DefaultListModel<>();
+		DefaultListModel<Textbox> boxSelectModel = new DefaultListModel<>();
 		for (Textbox b : boxes)
 			boxSelectModel.addElement(b);
 		boxSelect.setModel(boxSelectModel);
 		boxSelect.setSelectedIndex(currentBox);
+	}
+
+	public void updateFaces() {
+		DefaultComboBoxModel<String> faceSelectModel = new DefaultComboBoxModel<>(Resources.getFaces());
+		faceSelect.setModel(faceSelectModel);
+		for (Textbox box : boxes)
+			if (faceSelectModel.getIndexOf(box.face) == -1)
+				box.face = Resources.FACE_BLANK;
+		faceSelect.setSelectedItem(boxes.get(currentBox).face);
 	}
 
 	public boolean isProjectEmpty() {
@@ -682,7 +680,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			setOpaque(true);
 			setHorizontalAlignment(LEFT);
 			setVerticalAlignment(CENTER);
-
 		}
 
 		@Override
@@ -700,8 +697,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			ImageIcon icon = Resources.getFace(value.face).getIcon();
 			setIcon(icon);
 			// getGraphics() returns null here so we need to make our own Graphics object
-			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-			Graphics2D g = ge.createGraphics(IMAGE);
+			Graphics g = IMAGE.getGraphics();
 			g.setFont(getFont());
 			Rectangle2D bounds = g.getFontMetrics().getStringBounds(text, g);
 			setPreferredSize(new Dimension(100 + icon.getIconWidth(),

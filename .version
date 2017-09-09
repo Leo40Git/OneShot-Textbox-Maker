@@ -1,4 +1,6 @@
-1.5
+1.5.1
+Hotfix 1.5.1:
+- Fixed app forgetting where the project file was last saved when toggling spoilerific facepics
 1.5: The UI Update
 - Improved textbox navigation by using a list to select textbox instead of navigation buttons
 - Added OOB text highlighting

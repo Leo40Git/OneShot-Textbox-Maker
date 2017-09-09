@@ -24,7 +24,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -45,12 +44,11 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.leo.ostbm.MakerPanel.Textbox;
 import com.leo.ostbm.Resources.Icon;
 
 public class Main {
 
-	public static final Version VERSION = new Version("1.5");
+	public static final Version VERSION = new Version("1.5.1");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
@@ -216,7 +214,7 @@ public class Main {
 			}
 		Config.init();
 		LoadFrame loadFrame;
-		final String skipuc = "skipuc";
+		final String skipuc = "skipuc____";
 		boolean skipucF = new File(System.getProperty("user.dir") + "/" + skipuc).exists();
 		boolean skipucR = Config.getBoolean(Config.KEY_SKIP_UPDATE_CHECK, false);
 		if (skipucR) {
@@ -377,7 +375,7 @@ public class Main {
 					JPanel panel = new JPanel();
 					panel.setLayout(new BorderLayout());
 					panel.add(new JLabel("A new update is available: " + check), BorderLayout.PAGE_START);
-					final String defaultCl = "None.";
+					final String defaultCl = "No changelog provided.";
 					String cl = defaultCl;
 					while (reader.ready()) {
 						if (defaultCl.equals(cl))
@@ -387,11 +385,11 @@ public class Main {
 					}
 					JTextArea chglog = new JTextArea(cl);
 					chglog.setEditable(false);
+					chglog.setPreferredSize(new Dimension(800, 450));
 					JScrollPane scrollChglog = new JScrollPane(chglog);
-					scrollChglog.setPreferredSize(new Dimension(0, 200));
 					panel.add(scrollChglog, BorderLayout.CENTER);
-					panel.add(new JLabel(
-							"Click \"Yes\" to go to the download site, click \"No\" to continue to the textbox maker."),
+					panel.add(
+							new JLabel("Click \"Yes\" to go to the download site, click \"No\" to continue to OSTBM."),
 							BorderLayout.PAGE_END);
 					int result = JOptionPane.showConfirmDialog(null, panel, "New update!", JOptionPane.YES_NO_OPTION,
 							JOptionPane.PLAIN_MESSAGE);
@@ -481,18 +479,8 @@ public class Main {
 				Config.setBoolean(Config.KEY_HIDE_SOLSTICE_FACES, solsticeFacepics.isSelected());
 				try {
 					panel.updateCurrentBox();
-					System.out.println("Done");
-					int currentBox = panel.getCurrentBox();
-					List<Textbox> boxes = panel.getBoxes();
-					frame.remove(panel);
 					Resources.initFaces();
-					for (Textbox box : boxes)
-						if (Resources.getFace(box.face) == null)
-							box.face = Resources.FACE_BLANK;
-					panel = new MakerPanel(currentBox, boxes);
-					frame.add(panel);
-					frame.pack();
-					frame.repaint();
+					panel.updateFaces();
 				} catch (IOException e1) {
 					resourceError(e1);
 				}
