@@ -40,12 +40,12 @@ public class PreviewPanel extends JPanel implements ActionListener {
 		previewImage = new ImageIcon(image, "textbox(es) preview");
 		initPanel(this);
 	}
-	
+
 	public PreviewPanel(ImageIcon previewImage, ActionListener l) {
 		this.previewImage = previewImage;
 		initPanel(l);
 	}
-	
+
 	private void initPanel(ActionListener l) {
 		setLayout(new BorderLayout());
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
@@ -84,6 +84,12 @@ public class PreviewPanel extends JPanel implements ActionListener {
 					new FileNameExtensionFilter("PNG files", "png"));
 			if (sel == null)
 				return;
+			if (sel.exists()) {
+				int confirm = JOptionPane.showConfirmDialog(this, "File \"" + sel.getName() + "\" already exists?\nOverwrite it?", "Overwrite existing file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				if (confirm != JOptionPane.YES_OPTION)
+					return;
+				sel.delete();
+			}
 			try {
 				ImageIO.write(image, "png", sel);
 			} catch (IOException e1) {
@@ -114,19 +120,11 @@ public class PreviewPanel extends JPanel implements ActionListener {
 		}
 
 		public DataFlavor[] getTransferDataFlavors() {
-			DataFlavor[] flavors = new DataFlavor[1];
-			flavors[0] = DataFlavor.imageFlavor;
-			return flavors;
+			return new DataFlavor[] { DataFlavor.imageFlavor };
 		}
 
 		public boolean isDataFlavorSupported(DataFlavor flavor) {
-			DataFlavor[] flavors = getTransferDataFlavors();
-			for (DataFlavor supported : flavors) {
-				if (flavor.equals(supported)) {
-					return true;
-				}
-			}
-			return false;
+			return DataFlavor.imageFlavor.equals(flavor);
 		}
 	}
 }

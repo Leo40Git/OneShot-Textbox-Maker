@@ -8,6 +8,13 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -18,22 +25,23 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -241,7 +249,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		makeTextboxButton.addActionListener(this);
 		makeTextboxButton.setActionCommand(A_MAKE_BOXES);
 		bottomPanel.add(makeTextboxButton);
-		makeTextboxAnimButton = new JButton("<html>Generate Animated Textbox(es)!<sup>beta</sup></html>");
+		makeTextboxAnimButton = new JButton("Generate Animated Textbox(es)!");
 		makeTextboxAnimButton.addActionListener(this);
 		makeTextboxAnimButton.setActionCommand(A_MAKE_BOXES_ANIM);
 		bottomPanel.add(makeTextboxAnimButton);
@@ -559,83 +567,160 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			previewFrame.setVisible(true);
 			break;
 		case A_MAKE_BOXES_ANIM:
-			/*
-			TODO
-			A. Make this entire section more efficient (will probably need to make my own GIF encoder)
-			B. Fix copying to clipboard (using files maybe?)
-			*/
 			updateCurrentBox();
 			if (!checkTextboxes())
 				return;
-			final File[] temp = new File[1];
-			try {
-				List<BufferedImage> boxFrames = makeTextboxAnimation(boxes);
-				temp[0] = new File("tmp.gif");
-				ImageOutputStream out = new FileImageOutputStream(temp[0]);
-				GifSequenceWriter gsw = new GifSequenceWriter(out, boxFrames.get(0).getType(), 1, true);
-				for (BufferedImage frame : boxFrames)
-					gsw.writeToSequence(frame);
-				gsw.close();
-				out.close();
-				for (BufferedImage frame : boxFrames)
-					frame.flush();
-				ImageIcon preview = new ImageIcon(Resources.readImgFromFile(temp[0].getName(), this));
-				previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
-				previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				extraHeight = 82;
-				size = new Dimension(652, boxFrames.get(0).getHeight() + extraHeight);
-				maxHeight = 128 * 5 + 2 * 4 + extraHeight;
-				if (size.height > maxHeight)
-					size.height = maxHeight + 16;
-				previewFrame.setMinimumSize(size);
-				previewFrame.setPreferredSize(size);
-				previewFrame.setMaximumSize(size);
-				previewFrame.setResizable(false);
-				previewFrame.add(new PreviewPanel(preview, (ActionEvent ae) -> {
-					String cmd = ae.getActionCommand();
-					switch (cmd) {
-					case PreviewPanel.A_SAVE_BOXES:
-						File sel = Main.openFileDialog(true, this, "Save textbox(es) animation",
-								new FileNameExtensionFilter("GIF files", "gif"));
-						if (sel == null)
-							return;
-						Path src = Paths.get(temp[0].getAbsolutePath());
-						Path dst = Paths.get(sel.getAbsolutePath());
-						try {
-							Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
-						} catch (IOException e1) {
-							e1.printStackTrace();
-							JOptionPane.showMessageDialog(this,
-									"An exception occured while saving the animation:\n" + e1,
-									"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
-						}
-						break;
-					case PreviewPanel.A_COPY_BOXES:
-						/*
-						Toolkit.getDefaultToolkit().getSystemClipboard()
-								.setContents(new TransferableImage(preview.getImage()), null);
-								*/
-						JOptionPane.showMessageDialog(this, "Can't copy animated textboxes to your clipboard yet...",
-								"Not yet supported!", JOptionPane.ERROR_MESSAGE);
-						break;
-					default:
-						System.out.println("Undefined action: " + cmd);
-						break;
-					}
-				}));
-				previewFrame.pack();
-				previewFrame.setLocationRelativeTo(null);
-				previewFrame.setVisible(true);
+			List<BufferedImage> boxFrames = makeTextboxAnimation(boxes);
+			byte[] data = null;
+			Image image = null;
+			try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
+				ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
+				IIOMetadata meta = writer.getDefaultImageMetadata(
+						ImageTypeSpecifier.createFromBufferedImageType(boxFrames.get(0).getType()),
+						writer.getDefaultWriteParam());
+				String metaFormatName = meta.getNativeMetadataFormatName();
+				IIOMetadataNode root = (IIOMetadataNode) meta.getAsTree(metaFormatName);
+				IIOMetadataNode graphicsControl = getNode(root, "GraphicControlExtension");
+				graphicsControl.setAttribute("disposalMethod", "none");
+				graphicsControl.setAttribute("userInputFlag", "FALSE");
+				graphicsControl.setAttribute("transparentColorFlag", "FALSE");
+				graphicsControl.setAttribute("delayTime", "10");
+				graphicsControl.setAttribute("transparentColorIndex", "0");
+				IIOMetadataNode comments = getNode(root, "CommentExtensions");
+				comments.setAttribute("CommentExtension", "Animated OneShot Textbox");
+				IIOMetadataNode application = getNode(root, "ApplicationExtensions");
+				IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
+				child.setAttribute("applicationID", "NETSCAPE");
+				child.setAttribute("authenticationCode", "2.0");
+				child.setUserObject(new byte[] { 0x1, (byte) (0 & 0xFF), (byte) ((0 >> 8) & 0xFF) });
+				application.appendChild(child);
+				meta.setFromTree(metaFormatName, root);
+				writer.setOutput(ios);
+				writer.prepareWriteSequence(null);
+				for (int i = 0; i < boxFrames.size(); i++) {
+					BufferedImage frame = boxFrames.get(i);
+					writer.writeToSequence(new IIOImage(frame, null, meta), writer.getDefaultWriteParam());
+				}
+				writer.endWriteSequence();
+				ios.flush();
+				data = baos.toByteArray();
+				image = Toolkit.getDefaultToolkit().createImage(data);
 			} catch (IOException e1) {
 				e1.printStackTrace();
-				JOptionPane.showMessageDialog(this, "An exception occured while saving the animation:\n" + e1,
-						"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "An exception occured while generating the animation:\n" + e1,
+						"Couldn't generate animation!", JOptionPane.ERROR_MESSAGE);
 			}
+			ImageIcon preview = new ImageIcon(image);
+			previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
+			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			extraHeight = 82;
+			size = new Dimension(652, boxFrames.get(0).getHeight() + extraHeight);
+			maxHeight = 128 * 5 + 2 * 4 + extraHeight;
+			if (size.height > maxHeight)
+				size.height = maxHeight + 16;
+			previewFrame.setMinimumSize(size);
+			previewFrame.setPreferredSize(size);
+			previewFrame.setMaximumSize(size);
+			previewFrame.setResizable(false);
+			// final Image fimage = image;
+			final byte[] fdata = data;
+			previewFrame.add(new PreviewPanel(preview, (ActionEvent ae) -> {
+				String cmd = ae.getActionCommand();
+				switch (cmd) {
+				case PreviewPanel.A_SAVE_BOXES:
+					File sel = Main.openFileDialog(true, this, "Save textbox(es) animation",
+							new FileNameExtensionFilter("GIF files", "gif"));
+					if (sel == null)
+						return;
+					if (sel.exists()) {
+						int confirm = JOptionPane.showConfirmDialog(this, "File \"" + sel.getName() + "\" already exists?\nOverwrite it?", "Overwrite existing file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+						if (confirm != JOptionPane.YES_OPTION)
+							return;
+						sel.delete();
+					}
+					try (ImageOutputStream out = ImageIO.createImageOutputStream(sel)) {
+						out.write(fdata);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(this, "An exception occured while saving the animation:\n" + e1,
+								"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
+					}
+					break;
+				case PreviewPanel.A_COPY_BOXES:
+					File tmp = new File(System.getProperty("java.io.tmpdir"), "textbox.gif");
+					try (ImageOutputStream out = ImageIO.createImageOutputStream(tmp)) {
+						out.write(fdata);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(this,
+								"An exception occured while copying the animation to the clipboard:\n" + e1,
+								"Couldn't copy animation to clipboard!", JOptionPane.ERROR_MESSAGE);
+					}
+					List<File> file = new ArrayList<>();
+					file.add(tmp);
+					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new TransferableFile(file),
+							new ClipboardOwner() {
+								@Override
+								public void lostOwnership(Clipboard clipboard, Transferable contents) {
+									tmp.delete();
+								}
+							});
+					break;
+				default:
+					System.out.println("Undefined action: " + cmd);
+					break;
+				}
+			}));
+			previewFrame.pack();
+			previewFrame.setLocationRelativeTo(null);
+			previewFrame.setVisible(true);
 			break;
 		default:
 			System.out.println("Undefined action: " + a);
 			break;
 		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	public static class TransferableFile implements Transferable {
+
+		private List listOfFiles;
+
+		public TransferableFile(List listOfFiles) {
+			this.listOfFiles = listOfFiles;
+		}
+
+		@Override
+		public DataFlavor[] getTransferDataFlavors() {
+			return new DataFlavor[] { DataFlavor.javaFileListFlavor };
+		}
+
+		@Override
+		public boolean isDataFlavorSupported(DataFlavor flavor) {
+			return DataFlavor.javaFileListFlavor.equals(flavor);
+		}
+
+		@Override
+		public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+			if (flavor.equals(DataFlavor.javaFileListFlavor) && listOfFiles != null) {
+				return listOfFiles;
+			} else {
+				throw new UnsupportedFlavorException(flavor);
+			}
+		}
+	}
+
+	private IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
+		int nNodes = rootNode.getLength();
+		for (int i = 0; i < nNodes; i++) {
+			if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName) == 0) {
+				return ((IIOMetadataNode) rootNode.item(i));
+			}
+		}
+		IIOMetadataNode node = new IIOMetadataNode(nodeName);
+		rootNode.appendChild(node);
+		return (node);
 	}
 
 	private boolean checkTextboxes() {

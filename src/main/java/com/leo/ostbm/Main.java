@@ -48,7 +48,7 @@ import com.leo.ostbm.Resources.Icon;
 
 public class Main {
 
-	public static final Version VERSION = new Version("1.5.1");
+	public static final Version VERSION = new Version("1.6");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
