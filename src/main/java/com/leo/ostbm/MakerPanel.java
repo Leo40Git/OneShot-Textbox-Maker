@@ -922,8 +922,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						l--;
 						ignoreNextTab = true;
 					}
-				}
-				drawnText += c;
+				} else
+					drawnText += c;
 				ret.add(drawTextbox(box.face, drawnText, false));
 			}
 			if (text.endsWith("\t")) {
@@ -1166,13 +1166,13 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			styleNormal = new SimpleAttributeSet();
 			StyleConstants.setFontFamily(styleNormal, font.getFamily());
 			StyleConstants.setFontSize(styleNormal, font.getSize());
-			StyleConstants.setForeground(styleNormal, Color.white);
+			StyleConstants.setForeground(styleNormal, Color.WHITE);
 			StyleConstants.setBold(styleNormal, font.isBold());
 			styleOver = new SimpleAttributeSet();
 			StyleConstants.setFontFamily(styleOver, font.getFamily());
 			StyleConstants.setFontSize(styleOver, font.getSize());
-			StyleConstants.setBackground(styleOver, Color.red);
-			StyleConstants.setForeground(styleOver, Color.white);
+			StyleConstants.setBackground(styleOver, Color.RED);
+			StyleConstants.setForeground(styleOver, Color.WHITE);
 			StyleConstants.setBold(styleOver, font.isBold());
 			setText(text);
 			addKeyListener(new KeyAdapter() {
