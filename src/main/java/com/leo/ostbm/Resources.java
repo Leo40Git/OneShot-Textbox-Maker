@@ -3,6 +3,7 @@ package com.leo.ostbm;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -100,10 +101,10 @@ public class Resources {
 
 	private static List<BufferedImage> appIcons;
 	private static Map<Icon, ImageIcon> icons;
-	private static BufferedImage box;
-	private static BufferedImage arrow;
+	private static BufferedImage textboxImage;
+	private static BufferedImage textboxArrow;
 	private static Font fontBase;
-	private static Font fontBox;
+	private static Font textboxFont;
 
 	public static void checkResFolder() {
 		File resFolder = new File("res");
@@ -116,13 +117,15 @@ public class Resources {
 	}
 
 	public static void initFonts() throws FontFormatException, IOException {
-		fontBase = Font.createFont(Font.TRUETYPE_FONT, new File("res/font.ttf"));
-		fontBox = fontBase.deriveFont(Font.PLAIN, 20);
+		fontBase = Font.createFont(Font.TRUETYPE_FONT, new File("res/textboxFont.ttf"));
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		textboxFont = fontBase.deriveFont(Font.BOLD, 20);
+		ge.registerFont(textboxFont);
 	}
 
 	public static void initImages() throws IOException, URISyntaxException {
-		box = ImageIO.read(new File("res/box.png"));
-		arrow = ImageIO.read(new File("res/arrow.png"));
+		textboxImage = ImageIO.read(new File("res/textboxImage.png"));
+		textboxArrow = ImageIO.read(new File("res/textboxArrow.png"));
 		appIcons = new LinkedList<>();
 		final String[] sizes = new String[] { "16", "32", "64" };
 		for (String size : sizes)
@@ -157,16 +160,16 @@ public class Resources {
 		loadingCustom = true;
 	}
 
-	public static Font getFontBox() {
-		return fontBox;
+	public static Font getTextboxFont() {
+		return textboxFont;
 	}
 
-	public static BufferedImage getBox() {
-		return box;
+	public static BufferedImage getTextboxImage() {
+		return textboxImage;
 	}
 
-	public static BufferedImage getArrow() {
-		return arrow;
+	public static BufferedImage getTextboxArrow() {
+		return textboxArrow;
 	}
 
 	public static List<BufferedImage> getAppIcons() {
@@ -223,9 +226,10 @@ public class Resources {
 				try {
 					addFace(face);
 				} catch (Exception e) {
-					System.err.println("Ignoring exception from trying to load \"" + face.getName()
-							+ "\" from directory \"" + dir.getPath() + "\":");
 					e.printStackTrace();
+					JOptionPane.showMessageDialog(null,
+							"Could not load face " + face.getName() + "!\n(at " + face.getAbsolutePath() + ")\n" + e,
+							"Could not load face!", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 	}
