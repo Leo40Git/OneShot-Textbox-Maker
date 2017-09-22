@@ -10,8 +10,6 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
-import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -72,6 +70,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
 import javax.swing.text.ComponentView;
@@ -82,11 +81,9 @@ import javax.swing.text.Element;
 import javax.swing.text.IconView;
 import javax.swing.text.LabelView;
 import javax.swing.text.ParagraphView;
-import javax.swing.text.Position;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-import javax.swing.text.TabSet;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 
@@ -116,7 +113,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public static final String A_MAKE_BOXES = "makeBoxes";
 	public static final String A_MAKE_BOXES_ANIM = "makeBoxesAnim";
 
-	class Textbox {
+	static class Textbox {
 		public String face;
 		public String text;
 
@@ -137,7 +134,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		public String toString() {
 			String t = text;
 			t = t.replace('\n', ' ');
-			t = t.replace('\t', ' ');
+			t = t.replaceAll("\\|", "");
 			final int maxLen = 27;
 			if (t.length() > maxLen)
 				t = t.substring(0, maxLen) + "...";
@@ -217,6 +214,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		boxSelect.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		updateBoxList();
 		boxSelect.addListSelectionListener(this);
+		boxSelect.setBackground(COLOR_TEXTBOX);
+		boxSelect.setForeground(Color.WHITE);
 		boxSelect.setCellRenderer(new TextboxListRenderer());
 		JScrollPane scroll = new JScrollPane(boxSelect);
 		boxSelectPanel.add(scroll, BorderLayout.CENTER);
@@ -258,12 +257,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		boxEditPanel.add(faceSelectPanel, BorderLayout.PAGE_START);
 		JPanel centerPanel = new JPanel();
 		centerPanel.setLayout(new BorderLayout());
-		textPane = new TextboxEditorPane(boxes.get(currentBox).text);
+		textPane = new TextboxEditorPane(this, boxes.get(currentBox).text);
 		textPane.setBackground(COLOR_TEXTBOX);
 		textPane.setCaretColor(Color.WHITE);
 		centerPanel.add(new JScrollPane(textPane), BorderLayout.CENTER);
 		centerPanel.add(new JLabel(
-				"<html>Press Tab to add a delay of 1 frame.<br/>Press Tab at the end of a textbox to make the next texbox interrupt it.<br/>These only work in animated textboxes, otherwise they're ignored.</html>"),
+				"<html>Add a vertical bar (|) to add a delay of 1 frame.<br/>Add a vertical bar at the end of a textbox to make the next texbox interrupt it.<br/>These only work in animated textboxes, otherwise they're ignored.</html>"),
 				BorderLayout.PAGE_END);
 		boxEditPanel.add(centerPanel, BorderLayout.CENTER);
 		JPanel bottomPanel = new JPanel();
@@ -280,29 +279,30 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		add(boxEditPanel, BorderLayout.CENTER);
 	}
 
-	public Textbox updateCurrentBoxFace(Textbox box) {
-		if (box == null)
-			box = boxes.get(currentBox);
+	public void updateCurrentBoxFace(Textbox box) {
 		box.face = (String) faceSelect.getSelectedItem();
 		boxSelect.repaint();
-		return box;
 	}
 
-	public Textbox updateCurrentBoxFace() {
-		return updateCurrentBoxFace(null);
+	public void updateCurrentBoxFace() {
+		updateCurrentBoxFace(boxes.get(currentBox));
 	}
 
 	public void updateCurrentBox() {
 		Textbox box = boxes.get(currentBox);
 		box.text = textPane.getText();
 		updateCurrentBoxFace(box);
-		boxSelect.repaint();
+	}
+
+	public void updateBoxComponents(boolean updateFaceSelect) {
+		Textbox box = boxes.get(currentBox);
+		if (updateFaceSelect)
+			faceSelect.setSelectedItem(box.face);
+		textPane.setText(box.text);
 	}
 
 	public void updateBoxComponents() {
-		Textbox box = boxes.get(currentBox);
-		faceSelect.setSelectedItem(box.face);
-		textPane.setText(box.text);
+		updateBoxComponents(true);
 	}
 
 	public void updateBoxList() {
@@ -311,6 +311,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			boxSelectModel.addElement(b);
 		boxSelect.setModel(boxSelectModel);
 		boxSelect.setSelectedIndex(currentBox);
+		boxSelect.ensureIndexIsVisible(currentBox);
 	}
 
 	public void updateFaces() {
@@ -766,7 +767,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		Vector<String[]> errors = new Vector<>();
 		for (int i = 0; i < boxes.size(); i++) {
 			Textbox b = boxes.get(i);
-			String text = b.text.replaceAll("\t", "");
+			String text = b.text.replaceAll("\\|", "");
 			String[] lines = text.split("\n");
 			int linesNum = lines.length;
 			if (linesNum > 4) {
@@ -864,8 +865,10 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	@Override
 	public void itemStateChanged(ItemEvent e) {
-		if (e.getSource().equals(faceSelect))
+		if (e.getSource().equals(faceSelect)) {
 			updateCurrentBoxFace();
+			updateBoxComponents(false);
+		}
 	}
 
 	public static BufferedImage drawTextbox(String face, String text, boolean drawArrow, int arrowOffset) {
@@ -881,6 +884,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	public static void drawTextbox(Graphics g, String face, String text, int x, int y, boolean drawArrow,
 			int arrowOffset) {
+		text = text.replaceAll("\\|", "");
 		g.drawImage(Resources.getTextboxImage(), x, y, null);
 		Facepic faceObj = Resources.getFace(face);
 		if (faceObj != null)
@@ -911,27 +915,25 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			// add a blank textbox frame
 			ret.add(drawTextbox(box.face, "", false));
 			String text = box.text;
+			String strippedText = text.replaceAll("\\|", "");
 			String drawnText = "";
-			boolean ignoreNextTab = false;
+			boolean ignoreNextDelay = false;
 			for (int l = 0; l < text.length() - 1; l++) {
 				char c = text.charAt(l);
-				if (c == '\t') {
-					if (ignoreNextTab)
-						ignoreNextTab = false;
+				if (c == '|') {
+					if (ignoreNextDelay)
+						ignoreNextDelay = false;
 					else {
 						l--;
-						ignoreNextTab = true;
+						ignoreNextDelay = true;
 					}
 				} else
 					drawnText += c;
 				ret.add(drawTextbox(box.face, drawnText, false));
 			}
-			if (text.endsWith("\t")) {
-				BufferedImage frame = drawTextbox(box.face, text, false);
-				ret.add(frame);
-			} else {
+			if (!text.endsWith("|")) {
 				if (i == boxes.size() - 1) {
-					BufferedImage frame = drawTextbox(box.face, text, false);
+					BufferedImage frame = drawTextbox(box.face, strippedText, false);
 					for (int d = 0; d < 48; d++)
 						ret.add(frame);
 				} else {
@@ -944,7 +946,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						} else if (dir == -1)
 							if (arrowOffset == -1)
 								dir = 1;
-						BufferedImage frame = drawTextbox(box.face, text, true, arrowOffset);
+						BufferedImage frame = drawTextbox(box.face, strippedText, true, arrowOffset);
 						ret.add(frame);
 						ret.add(frame);
 						ret.add(frame);
@@ -965,19 +967,18 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			setOpaque(true);
 			setHorizontalAlignment(LEFT);
 			setVerticalAlignment(CENTER);
+
 		}
 
 		@Override
 		public Component getListCellRendererComponent(JList<? extends Textbox> list, Textbox value, int index,
 				boolean isSelected, boolean cellHasFocus) {
-			if (isSelected) {
-				setBackground(list.getSelectionBackground());
-				setForeground(list.getSelectionForeground());
-			} else {
-				setBackground(list.getBackground());
-				setForeground(list.getForeground());
-			}
-			String text = "<html><b>Textbox " + (index + 1) + "</b><br>" + value.toString() + "</html>";
+			if (isSelected)
+				setBackground(COLOR_TEXTBOX_B);
+			else
+				setBackground(COLOR_TEXTBOX);
+			String text = "<html><font color=white>Textbox " + (index + 1) + "</font><br><font color=gray><i>"
+					+ value.toString() + "</i></font></html>";
 			setText(text);
 			ImageIcon icon = Resources.getFace(value.face).getIcon();
 			setIcon(icon);
@@ -990,14 +991,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			return this;
 		}
 
-		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-		}
-
 	}
 
-	class FacesComboBoxRenderer extends JLabel implements ListCellRenderer<String> {
+	static class FacesComboBoxRenderer extends JLabel implements ListCellRenderer<String> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -1033,9 +1029,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	}
 
-	class TextboxEditorPane extends JEditorPane {
+	static class TextboxEditorPane extends JEditorPane {
 
-		class TextboxEditorKit extends DefaultEditorKit {
+		static class TextboxEditorKit extends DefaultEditorKit {
 
 			private static final long serialVersionUID = 1L;
 
@@ -1044,77 +1040,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				return new TextboxViewFactory();
 			}
 
-			class TextboxViewFactory implements ViewFactory {
+			static class TextboxViewFactory implements ViewFactory {
 
-				class TextboxLabelView extends LabelView {
-
-					public static final String SHOW_SPACES = "showSpaces";
-
-					public TextboxLabelView(Element elem) {
-						super(elem);
-					}
-
-					@Override
-					public void paint(Graphics g, Shape a) {
-						super.paint(g, a);
-						boolean showSpaces = getDocument().getProperty(SHOW_SPACES) != null;
-						try {
-							Rectangle r = a instanceof Rectangle ? (Rectangle) a : a.getBounds();
-							String labelStr = getDocument().getText(getStartOffset(),
-									getEndOffset() - getStartOffset());
-							int x0 = modelToView(getStartOffset(), new Rectangle(r.width, r.height),
-									Position.Bias.Forward).getBounds().x;
-							for (int i = 0; i < labelStr.length(); i++) {
-								int x = modelToView(i + getStartOffset(), new Rectangle(r.width, r.height),
-										Position.Bias.Forward).getBounds().x - x0;
-								char c = labelStr.charAt(i);
-								if (showSpaces && c == ' ') {
-									int x2 = modelToView(i + 1 + getStartOffset(), new Rectangle(r.width, r.height),
-											Position.Bias.Forward).getBounds().x - x0;
-									Rectangle clip = new Rectangle(r.x + x - 2, r.y, x2 - x + 2, r.height);
-									Color oldColor = g.getColor();
-									Shape oldClip = g.getClip();
-									g.setColor(oldColor.darker().darker());
-									g.setClip(clip);
-									g.drawLine(x2 - 4, r.y + r.height / 2, x2 - 4, r.y + r.height / 2 + 1);
-									g.drawLine(x2 - 3, r.y + r.height / 2, x2 - 3, r.y + r.height / 2 + 1);
-									g.setColor(oldColor);
-									g.setClip(oldClip);
-								} else if (c == '\t') {
-									int x2 = modelToView(i + 1 + getStartOffset(), new Rectangle(r.width, r.height),
-											Position.Bias.Forward).getBounds().x - x0;
-									Rectangle clip = new Rectangle(r.x + x - 1, r.y, x2 - x + 1, r.height);
-									Color oldColor = g.getColor();
-									Shape oldClip = g.getClip();
-									g.setColor(oldColor.darker().darker());
-									g.setClip(clip);
-									g.drawLine(x, r.y + r.height / 2, x2 - 1, r.y + r.height / 2);
-									g.drawLine(x2 - 1, r.y + r.height / 2, x2 - 4, r.y + r.height / 2 - 3);
-									g.drawLine(x2 - 1, r.y + r.height / 2, x2 - 4, r.y + r.height / 2 + 3);
-									g.setColor(oldColor);
-									g.setClip(oldClip);
-								}
-							}
-						} catch (BadLocationException e) {
-							e.printStackTrace();
-						}
-					}
-
-				}
-
-				class TextboxParagraphView extends ParagraphView {
-
-					static final int TAB_SIZE = 36;
+				static class TextboxParagraphView extends ParagraphView {
 
 					public TextboxParagraphView(Element elem) {
 						super(elem);
-					}
-
-					public float nextTabStop(float x, int tabOffset) {
-						TabSet tabs = getTabSet();
-						if (tabs == null)
-							return (float) (getTabBase() + (((int) x / TAB_SIZE + 1) * TAB_SIZE));
-						return super.nextTabStop(x, tabOffset);
 					}
 
 					@Override
@@ -1134,7 +1065,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					String kind = elem.getName();
 					switch (kind) {
 					case AbstractDocument.ContentElementName:
-						return new TextboxLabelView(elem);
+						return new LabelView(elem);
 					case AbstractDocument.ParagraphElementName:
 						return new TextboxParagraphView(elem);
 					case AbstractDocument.SectionElementName:
@@ -1155,12 +1086,24 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 		private static final long serialVersionUID = 1L;
 
+		private MakerPanel panel;
 		private SimpleAttributeSet styleNormal, styleOver;
 
-		public TextboxEditorPane(String text) {
+		public TextboxEditorPane(MakerPanel panel, String text) {
 			super();
+			this.panel = panel;
 			setEditorKit(new TextboxEditorKit());
-			StyledDocument doc = new DefaultStyledDocument();
+			StyledDocument doc = new DefaultStyledDocument() {
+
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+					str = str.replaceAll("\t", "    ");
+					super.insertString(offs, str, a);
+				}
+
+			};
 			setDocument(doc);
 			Font font = Resources.getTextboxFont();
 			styleNormal = new SimpleAttributeSet();
@@ -1178,7 +1121,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			addKeyListener(new KeyAdapter() {
 				@Override
 				public void keyReleased(KeyEvent e) {
-					updateCurrentBox();
+					panel.updateCurrentBox();
 					Document doc = getDocument();
 					if (doc instanceof StyledDocument)
 						highlight((StyledDocument) doc);
@@ -1196,15 +1139,16 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 		private void highlight(StyledDocument doc) {
 			doc.setParagraphAttributes(0, doc.getLength(), styleNormal, true);
+			doc.setCharacterAttributes(0, doc.getLength(), styleNormal, true);
 			int maxLen = 57;
-			if (faceSelect.getSelectedItem() != Resources.FACE_BLANK)
+			if (panel.faceSelect.getSelectedItem() != Resources.FACE_BLANK)
 				maxLen -= 10;
 			String[] lines = getText().split("\n");
 			for (int i = 0; i < lines.length; i++) {
-				int length = 0, tabOff = 0;
+				int length = 0, ignoreOff = 0;
 				for (char c : lines[i].toCharArray())
-					if (c == '\t')
-						tabOff++;
+					if (c == '|')
+						ignoreOff++;
 					else
 						length++;
 				int start = 0, end = 0;
@@ -1212,9 +1156,10 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				start = line.getStartOffset();
 				end = line.getEndOffset();
 				if (i > 3) {
+					doc.setParagraphAttributes(start, end - start, styleOver, true);
 					doc.setCharacterAttributes(start, end - start, styleOver, true);
 				} else if (length > maxLen) {
-					final int pos = start + tabOff + maxLen;
+					final int pos = start + ignoreOff + maxLen;
 					doc.setCharacterAttributes(pos, end - pos, styleOver, true);
 				}
 			}
