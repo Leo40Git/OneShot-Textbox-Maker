@@ -1122,9 +1122,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				@Override
 				public void keyReleased(KeyEvent e) {
 					panel.updateCurrentBox();
-					Document doc = getDocument();
-					if (doc instanceof StyledDocument)
-						highlight((StyledDocument) doc);
+					highlight();
 				}
 			});
 		}
@@ -1132,38 +1130,39 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		@Override
 		public void setText(String t) {
 			super.setText(t);
-			Document doc = getDocument();
-			if (doc instanceof StyledDocument)
-				highlight((StyledDocument) doc);
+			highlight();
 		}
 
-		private void highlight(StyledDocument doc) {
-			doc.setParagraphAttributes(0, doc.getLength(), styleNormal, true);
-			doc.setCharacterAttributes(0, doc.getLength(), styleNormal, true);
-			int maxLen = 57;
-			if (panel.faceSelect.getSelectedItem() != Resources.FACE_BLANK)
-				maxLen -= 10;
-			String[] lines = getText().split("\n");
-			for (int i = 0; i < lines.length; i++) {
-				int length = 0, ignoreOff = 0;
-				for (char c : lines[i].toCharArray())
-					if (c == '|')
-						ignoreOff++;
-					else
-						length++;
-				int start = 0, end = 0;
-				Element line = doc.getDefaultRootElement().getElement(i);
-				start = line.getStartOffset();
-				end = line.getEndOffset();
-				if (i > 3) {
-					doc.setParagraphAttributes(start, end - start, styleOver, true);
-					doc.setCharacterAttributes(start, end - start, styleOver, true);
-				} else if (length > maxLen) {
-					final int pos = start + ignoreOff + maxLen;
-					doc.setCharacterAttributes(pos, end - pos, styleOver, true);
+		private void highlight() {
+			Document doc = getDocument();
+			if (doc instanceof StyledDocument) {
+				StyledDocument stylDoc = (StyledDocument) doc;
+				stylDoc.setParagraphAttributes(0, doc.getLength(), styleNormal, true);
+				stylDoc.setCharacterAttributes(0, doc.getLength(), styleNormal, true);
+				int maxLen = 57;
+				if (panel.faceSelect.getSelectedItem() != Resources.FACE_BLANK)
+					maxLen -= 10;
+				String[] lines = getText().split("\n");
+				for (int i = 0; i < lines.length; i++) {
+					int length = 0, ignoreOff = 0;
+					for (char c : lines[i].toCharArray())
+						if (c == '|')
+							ignoreOff++;
+						else
+							length++;
+					int start = 0, end = 0;
+					Element line = doc.getDefaultRootElement().getElement(i);
+					start = line.getStartOffset();
+					end = line.getEndOffset();
+					if (i > 3) {
+						stylDoc.setParagraphAttributes(start, end - start, styleOver, true);
+						stylDoc.setCharacterAttributes(start, end - start, styleOver, true);
+					} else if (length > maxLen) {
+						final int pos = start + ignoreOff + maxLen;
+						stylDoc.setCharacterAttributes(pos, end - pos, styleOver, true);
+					}
 				}
 			}
-			repaint();
 		}
 
 	}
