@@ -917,7 +917,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	static class TextboxParseData {
 		public String strippedText;
-		public Map<Integer, TextboxModifier> mods;
+		public Map<Integer, List<TextboxModifier>> mods;
 
 		public TextboxParseData() {
 			mods = new HashMap<>();
@@ -1006,7 +1006,13 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 							mod.args = new String[0];
 						}
 					}
-					ret.mods.put(pos, mod);
+					if (ret.mods.containsKey(pos))
+						ret.mods.get(pos).add(mod);
+					else {
+						List<TextboxModifier> modList = new LinkedList<>();
+						modList.add(mod);
+						ret.mods.put(pos, modList);
+					}
 				}
 			}
 			System.out.println("strippedToken=" + token);
@@ -1096,25 +1102,27 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			for (int i = 0; i < chars.length; i++) {
 				System.out.println("drawing character " + i);
 				if (tpd.mods.containsKey(i)) {
-					System.out.println("has mod!");
-					TextboxModifier mod = tpd.mods.get(i);
-					if (mod.type == TextboxModifier.ModType.COLOR) {
-						System.out.println("mod is color mod!");
-						String[] cdata = mod.args;
-						if (cdata.length == 3) {
-							System.out.println("3 args, custom color");
-							g.setColor(new Color(Integer.parseInt(cdata[0]), Integer.parseInt(cdata[1]),
-									Integer.parseInt(cdata[2])));
-						} else if (cdata.length == 1) {
-							System.out.println("1 arg, preset color");
-							Integer preset = Integer.parseInt(cdata[0]);
-							if (TEXTBOX_PRESET_COLORS.containsKey(preset))
-								g.setColor(TEXTBOX_PRESET_COLORS.get(preset));
-							else
+					System.out.println("has mod(s)!");
+					List<TextboxModifier> mods = tpd.mods.get(i);
+					for (TextboxModifier mod : mods) {
+						if (mod.type == TextboxModifier.ModType.COLOR) {
+							System.out.println("mod is color mod!");
+							String[] cdata = mod.args;
+							if (cdata.length == 3) {
+								System.out.println("3 args, custom color");
+								g.setColor(new Color(Integer.parseInt(cdata[0]), Integer.parseInt(cdata[1]),
+										Integer.parseInt(cdata[2])));
+							} else if (cdata.length == 1) {
+								System.out.println("1 arg, preset color");
+								Integer preset = Integer.parseInt(cdata[0]);
+								if (TEXTBOX_PRESET_COLORS.containsKey(preset))
+									g.setColor(TEXTBOX_PRESET_COLORS.get(preset));
+								else
+									g.setColor(defaultCol);
+							} else {
+								System.out.println("no args, reset to default color");
 								g.setColor(defaultCol);
-						} else {
-							System.out.println("no args, reset to default color");
-							g.setColor(defaultCol);
+							}
 						}
 					}
 				}
@@ -1141,25 +1149,27 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			for (int l = 0; l < text.length() - 1; l++) {
 				int delay = 1;
 				if (tpd.mods.containsKey(l)) {
-					TextboxModifier mod = tpd.mods.get(l);
-					switch (mod.type) {
-					case DELAY:
-						Integer newDelay = delay;
-						try {
-							newDelay = Integer.parseInt(mod.args[0]);
-						} catch (NumberFormatException e) {
-							e.printStackTrace();
-							newDelay = delay;
+					List<TextboxModifier> mods = tpd.mods.get(l);
+					for (TextboxModifier mod : mods) {
+						switch (mod.type) {
+						case DELAY:
+							Integer newDelay = delay;
+							try {
+								newDelay = Integer.parseInt(mod.args[0]);
+							} catch (NumberFormatException e) {
+								e.printStackTrace();
+								newDelay = delay;
+							}
+							delay = newDelay;
+							break;
+						case FACE:
+							String newFace = mod.args[0];
+							if (Resources.getFace(newFace) != null)
+								face = newFace;
+							break;
+						default:
+							break;
 						}
-						delay = newDelay;
-						break;
-					case FACE:
-						String newFace = mod.args[0];
-						if (Resources.getFace(newFace) != null)
-							face = newFace;
-						break;
-					default:
-						break;
 					}
 				}
 				char c = text.charAt(l);
@@ -1172,7 +1182,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			System.out.println("looking for mod at end of string (" + (text.length()) + ")");
 			if (tpd.mods.containsKey(text.length())) {
 				System.out.println("found mod at end of string");
-				if (tpd.mods.get(text.length()).type == TextboxModifier.ModType.INTERRUPT) {
+				List<TextboxModifier> mods = tpd.mods.get(text.length());
+				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INTERRUPT) {
 					System.out.println("mod is INTERRUPT");
 					endsWithInterrupt = true;
 				} else {
