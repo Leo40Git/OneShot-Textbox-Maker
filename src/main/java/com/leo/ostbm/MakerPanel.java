@@ -913,13 +913,13 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				setIcon(Resources.getFace(Resources.FACE_BLANK).getIcon());
 			else
 				setIcon(faceIcon);
-			String text = "<html><font color=white>" + face.getName();
+			String text = "<html><p style=\"color:white;\">" + face.getName();
 			if (face.isCustom())
 				text += "<b>*</b>";
 			File faceFile = face.getFile();
 			if (faceFile != null)
-				text += "</font><br><font color=gray><i>" + faceFile.getPath() + "</i>";
-			text += "</font></html>";
+				text += "</p><p style=\"color:gray;\"><i>" + faceFile.getPath() + "</i>";
+			text += "</p></html>";
 			setText(text);
 			return this;
 		}
@@ -991,7 +991,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			this.panel = panel;
 			setEditorKit(new TextboxEditorKit());
 			StyledDocument doc = new DefaultStyledDocument() {
-
 				private static final long serialVersionUID = 1L;
 
 				@Override
@@ -999,7 +998,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					str = str.replaceAll("\t", "    ");
 					super.insertString(offs, str, a);
 				}
-
 			};
 			setDocument(doc);
 			Font font = Resources.getTextboxFont();
@@ -1048,28 +1046,38 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				if (tpd.strippedText.isEmpty()) {
 					if (tpd.mods.containsKey(0)) {
 						List<TextboxModifier> list = tpd.mods.get(0);
-						for (TextboxModifier mod : list)
+						for (TextboxModifier mod : list) {
 							stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
+						}
 					}
 				} else {
 					String[] lines = tpd.strippedText.split("\n");
+					int currentChar = 0;
 					for (int i = 0; i < lines.length; i++) {
 						int length = 0, ignoreOff = 0;
 						char[] chars = lines[i].toCharArray();
 						for (int j = 0; j < chars.length; j++) {
 							char c = chars[j];
 							System.out.println("on char " + j + " (" + c + ")");
-							if (tpd.mods.containsKey(j)) {
+							if (tpd.mods.containsKey(currentChar)) {
 								System.out.println("has mod(s)");
-								List<TextboxModifier> list = tpd.mods.get(j);
+								List<TextboxModifier> list = tpd.mods.get(currentChar);
 								for (TextboxModifier mod : list) {
 									System.out.println("processing mod type " + mod.type + ", position " + mod.position
 											+ ", length " + mod.length);
+									if (mod.type == TextboxModifier.ModType.FACE)
+										if (mod.args.length == 0)
+											maxLen = 57;
+										else if (Resources.FACE_BLANK.equals(mod.args[0]))
+											maxLen = 57;
+										else
+											maxLen = 47;
 									stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
 									ignoreOff += mod.length;
 								}
 							}
 							length++;
+							currentChar++;
 						}
 						System.out.println("length=" + length + ",ignoreOff=" + ignoreOff);
 						int start = 0, end = 0;

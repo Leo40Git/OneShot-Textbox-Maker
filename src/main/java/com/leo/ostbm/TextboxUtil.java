@@ -50,7 +50,7 @@ public class TextboxUtil {
 	public static class TextboxModifier {
 
 		enum ModType {
-			FACE(1), COLOR(0, 1, 3), DELAY(1), INTERRUPT;
+			FACE(0, 1), COLOR(0, 1, 3), DELAY(1), INTERRUPT;
 
 			private int[] argNums;
 
@@ -101,10 +101,12 @@ public class TextboxUtil {
 		}
 		if (tokenBuilder.length() != 0)
 			tokenList.add(tokenBuilder.toString());
-		int nextPos = 0, pos = nextPos, realPos = 0;
+		int posDelta = 0, pos = 0, realPos = 0;
 		for (String token : tokenList) {
-			int realLength = token.length();
-			nextPos += realLength;
+			int realLength = token.replaceAll("\n", "").length();
+			System.out.println("realLength=" + realLength);
+			System.out.println("realPos=" + realPos);
+			System.out.println("pos=" + pos);
 			System.out.println("token=" + token);
 			boolean doModCheck = true;
 			if (!token.startsWith("\\")) {
@@ -154,13 +156,13 @@ public class TextboxUtil {
 					}
 					if (noArgs) {
 						mod.length = 2;
-						nextPos -= 2;
+						posDelta = 2;
 						token = token.substring(2);
 						mod.args = new String[0];
 					} else {
 						String argStr = token.substring(3, token.indexOf(']'));
 						mod.length = 4 + argStr.length();
-						nextPos -= token.indexOf(']') + 1;
+						posDelta = token.indexOf(']') + 1;
 						token = token.substring(token.indexOf(']') + 1);
 						String[] argStrs = argStr.split(",");
 						if (Arrays.binarySearch(argns, argStrs.length) >= 0) {
@@ -174,6 +176,7 @@ public class TextboxUtil {
 					}
 					mod.position = realPos;
 					System.out.println("mod position in unstripped string is " + mod.position);
+					System.out.println("mod has been put at position " + pos);
 					if (ret.mods.containsKey(pos))
 						ret.mods.get(pos).add(mod);
 					else {
@@ -183,15 +186,13 @@ public class TextboxUtil {
 					}
 				}
 			}
-			if (nextPos > strippedBuilder.length())
-				nextPos = strippedBuilder.length();
 			System.out.println("strippedToken=" + token);
-			System.out.println("pos=" + pos + ",nextPos=" + nextPos);
-			System.out.println("mod has been put at position " + pos);
-			System.out.println("next position is " + nextPos);
-			strippedBuilder.append(token);
-			pos = nextPos;
+			System.out.println("pos=" + pos + ",posDelta=" + posDelta);
+			pos += realLength;
+			pos -= posDelta;
+			posDelta = 0;
 			realPos += realLength;
+			strippedBuilder.append(token);
 		}
 		ret.strippedText = strippedBuilder.toString();
 		return ret;
@@ -266,15 +267,16 @@ public class TextboxUtil {
 		final FontMetrics fm = g.getFontMetrics();
 		final int lineSpace = fm.getHeight() + 1;
 		String text = tpd.strippedText;
+		int currentChar = 0;
 		for (String line : text.split("\n")) {
 			y += lineSpace;
 			x = startX;
 			char[] chars = line.toCharArray();
 			for (int i = 0; i < chars.length; i++) {
-				System.out.println("drawing character " + i);
-				if (tpd.mods.containsKey(i)) {
+				System.out.println("drawing character " + i + " (absolute pos " + currentChar + ")");
+				if (tpd.mods.containsKey(currentChar)) {
 					System.out.println("has mod(s)!");
-					List<TextboxModifier> mods = tpd.mods.get(i);
+					List<TextboxModifier> mods = tpd.mods.get(currentChar);
 					for (TextboxModifier mod : mods) {
 						if (mod.type == TextboxModifier.ModType.COLOR) {
 							System.out.println("mod is color mod!");
@@ -305,9 +307,10 @@ public class TextboxUtil {
 				char c = chars[i];
 				g.drawString(Character.toString(c), x, y);
 				x += fm.charWidth(c);
+				currentChar++;
 			}
-			g.setColor(defaultCol);
 		}
+		g.setColor(defaultCol);
 	}
 
 	public static List<BufferedImage> makeTextboxAnimation(List<Textbox> boxes) {
@@ -339,6 +342,10 @@ public class TextboxUtil {
 							delay = newDelay;
 							break;
 						case FACE:
+							if (mod.args.length == 0) {
+								face = Resources.FACE_BLANK;
+								break;
+							}
 							String newFace = mod.args[0];
 							if (Resources.getFace(newFace) != null)
 								face = newFace;

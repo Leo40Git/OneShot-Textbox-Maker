@@ -44,10 +44,10 @@ public class ModifierHelpPanel extends JPanel {
 		}
 		add(new JLabel("Any other number will reset to the default color."));
 		add(new JLabel(
-				"<html><p style=\"color:red;\">ALL MODIFIERS UNDER THIS LINE ONLY WORK IN ANIMATED TEXTBOXES!</p></html>"));
+				"<html><p style=\"color:red;\"><b>ALL MODIFIERS UNDER THIS LINE ONLY WORK IN ANIMATED TEXTBOXES!</b></p></html>"));
 		add(new JSeparator());
 		add(new JLabel("<html><b>\\d[frames]</b> - Delays the text for <code>frames</code> frames</html>"));
-		add(new JLabel("<html><b>\\@[face]</b> - Changes the textbox's facepic to <code>face</code></html>"));
+		add(new JLabel("<html><b>\\@[face]</b> - Changes the textbox's facepic to <code>face</code>, or removes the facepic if <code>face</code> isn't specified</html>"));
 		add(new JLabel(
 				"<html><b>\\i</b> - Causes the next textbox to interrupt the current textbox. <b>ONLY WORKS AT THE END OF A TEXTBOX!</b></html>"));
 	}
