@@ -20,7 +20,7 @@ public class ModifierHelpPanel extends JPanel {
 				"<html>Modifiers are formatted like so:<br><code>\\m[parameters]</code><br>If a modifier does not need any parameters, the square brackets can be omitted.</html>"));
 		add(new JSeparator());
 		add(new JLabel(
-				"<html><b>\\c</b> - Changes the text color<br>3 parameters: RGB color<br>1 parameter: preset color<br>no parameters: default color<br>Available preset colors are:</html>"));
+				"<html><b>\\c</b> - Changes the text color<br>3 parameters: custom RGB color (<code>[red,green,blue]</code>)<br>1 parameter: preset color <br>no parameters: default color<br>Available preset colors are:</html>"));
 
 		for (Map.Entry<Integer, Color> entry : TextboxUtil.TEXTBOX_PRESET_COLORS.entrySet()) {
 			String presets = "<html><p style=\"color:";
