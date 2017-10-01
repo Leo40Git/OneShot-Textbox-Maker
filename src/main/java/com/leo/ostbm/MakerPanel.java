@@ -35,8 +35,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.imageio.IIOImage;
@@ -95,6 +97,7 @@ import com.google.gson.reflect.TypeToken;
 import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
 import com.leo.ostbm.TextboxUtil.Textbox;
+import com.leo.ostbm.TextboxUtil.TextboxModifier;
 import com.leo.ostbm.TextboxUtil.TextboxParseData;
 
 public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener, ItemListener {
@@ -985,6 +988,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 		private MakerPanel panel;
 		private SimpleAttributeSet styleNormal, styleMod, styleOver;
+		private Map<Color, SimpleAttributeSet> colorStyleCache = new HashMap<>();
 
 		public TextboxEditorPane(MakerPanel panel, String text) {
 			super();
@@ -1006,6 +1010,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			StyleConstants.setFontSize(styleNormal, font.getSize());
 			StyleConstants.setForeground(styleNormal, Color.WHITE);
 			StyleConstants.setBold(styleNormal, font.isBold());
+			colorStyleCache.put(Color.WHITE, styleNormal);
 			styleMod = new SimpleAttributeSet();
 			StyleConstants.setFontFamily(styleMod, font.getFamily());
 			StyleConstants.setFontSize(styleMod, font.getSize());
@@ -1037,8 +1042,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			Document doc = getDocument();
 			if (doc instanceof StyledDocument) {
 				StyledDocument stylDoc = (StyledDocument) doc;
-				stylDoc.setParagraphAttributes(0, doc.getLength(), styleNormal, true);
-				stylDoc.setCharacterAttributes(0, doc.getLength(), styleNormal, true);
+				AttributeSet curStyle = styleNormal;
+				stylDoc.setParagraphAttributes(0, doc.getLength(), curStyle, true);
+				stylDoc.setCharacterAttributes(0, doc.getLength(), curStyle, true);
 				int maxLen = 57;
 				if (!Resources.FACE_BLANK.equals(panel.faceSelect.getSelectedItem()))
 					maxLen -= 10;
@@ -1052,9 +1058,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					}
 				} else {
 					String[] lines = tpd.strippedText.split("\n");
-					int currentChar = 0;
+					int currentChar = 0, length = 0, ignoreOff = 0;
 					for (int i = 0; i < lines.length; i++) {
-						int length = 0, ignoreOff = 0;
 						char[] chars = lines[i].toCharArray();
 						for (int j = 0; j < chars.length; j++) {
 							char c = chars[j];
@@ -1072,10 +1077,27 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 											maxLen = 57;
 										else
 											maxLen = 47;
+									else if (mod.type == TextboxModifier.ModType.COLOR) {
+										Color col = getColorModValue(mod, StyleConstants.getForeground(styleNormal));
+										SimpleAttributeSet colorStyle = colorStyleCache.get(col);
+										if (colorStyle == null) {
+											colorStyle = new SimpleAttributeSet();
+											Font font = Resources.getTextboxFont();
+											StyleConstants.setFontFamily(colorStyle, font.getFamily());
+											StyleConstants.setFontSize(colorStyle, font.getSize());
+											StyleConstants.setForeground(colorStyle, col);
+											StyleConstants.setBold(colorStyle, font.isBold());
+											colorStyleCache.put(col, colorStyle);
+										}
+										curStyle = colorStyle;
+									}
 									stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
+									System.out.print(ignoreOff + " + " + mod.length + " = ");
 									ignoreOff += mod.length;
+									System.out.println(ignoreOff);
 								}
 							}
+							stylDoc.setCharacterAttributes(currentChar + ignoreOff, 1, curStyle, true);
 							length++;
 							currentChar++;
 						}

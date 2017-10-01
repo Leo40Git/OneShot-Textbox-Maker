@@ -143,9 +143,10 @@ public class TextboxUtil {
 					boolean noArgsPossible = Arrays.binarySearch(argns, 0) >= 0;
 					boolean noArgs = noArgsPossible && argns.length == 1;
 					char third = 0;
-					if (token.length() > 3)
-						third = token.charAt(3);
-					if (!noArgs && (third == '[' || token.indexOf(']') == -1)) {
+					if (token.length() > 2)
+						third = token.charAt(2);
+					System.out.println("3rd char is " + third + ", should be [");
+					if (!noArgs && (third != '[' || token.indexOf(']') == -1)) {
 						if (noArgsPossible)
 							noArgs = true;
 						else {
@@ -238,26 +239,66 @@ public class TextboxUtil {
 		drawTextbox(g, face, text, x, y, drawArrow, 0);
 	}
 
-	public static final Map<Integer, Color> TEXTBOX_PRESET_COLORS = new HashMap<>();
-	public static final Map<Integer, String> TEXTBOX_PRESET_COLOR_NAMES = new HashMap<>();
+	public static final Map<Integer, Color> TEXTBOX_PRESET_COLORS;
+	public static final Map<Integer, String> TEXTBOX_PRESET_COLOR_NAMES;
 
 	static {
-		TEXTBOX_PRESET_COLORS.put(0, new Color(255, 255, 255));
-		TEXTBOX_PRESET_COLOR_NAMES.put(0, "white");
-		TEXTBOX_PRESET_COLORS.put(1, new Color(255, 64, 64));
-		TEXTBOX_PRESET_COLOR_NAMES.put(1, "red");
-		TEXTBOX_PRESET_COLORS.put(2, new Color(0, 224, 0));
-		TEXTBOX_PRESET_COLOR_NAMES.put(2, "green");
-		TEXTBOX_PRESET_COLORS.put(3, new Color(255, 255, 0));
-		TEXTBOX_PRESET_COLOR_NAMES.put(3, "yellow");
-		TEXTBOX_PRESET_COLORS.put(4, new Color(64, 64, 255));
-		TEXTBOX_PRESET_COLOR_NAMES.put(4, "blue");
-		TEXTBOX_PRESET_COLORS.put(5, new Color(255, 64, 255));
-		TEXTBOX_PRESET_COLOR_NAMES.put(5, "purple");
-		TEXTBOX_PRESET_COLORS.put(6, new Color(64, 255, 255));
-		TEXTBOX_PRESET_COLOR_NAMES.put(6, "cyan");
-		TEXTBOX_PRESET_COLORS.put(7, new Color(128, 128, 128));
-		TEXTBOX_PRESET_COLOR_NAMES.put(7, "gray");
+		Map<Integer, Color> colors = new HashMap<>();
+		Map<Integer, String> cnames = new HashMap<>();
+		colors.put(0, new Color(255, 255, 255));
+		cnames.put(0, "white");
+		colors.put(1, new Color(255, 64, 64));
+		cnames.put(1, "red");
+		colors.put(2, new Color(0, 224, 0));
+		cnames.put(2, "green");
+		colors.put(3, new Color(255, 255, 0));
+		cnames.put(3, "yellow");
+		colors.put(4, new Color(64, 64, 255));
+		cnames.put(4, "blue");
+		colors.put(5, new Color(255, 64, 255));
+		cnames.put(5, "purple");
+		colors.put(6, new Color(64, 255, 255));
+		cnames.put(6, "cyan");
+		colors.put(7, new Color(128, 128, 128));
+		cnames.put(7, "gray");
+		TEXTBOX_PRESET_COLORS = new UnmodifiableMapWrapper<>(colors);
+		TEXTBOX_PRESET_COLOR_NAMES = new UnmodifiableMapWrapper<>(cnames);
+	}
+
+	public static Color getColorModValue(TextboxModifier mod, Color defaultColor) {
+		if (mod.type != TextboxModifier.ModType.COLOR)
+			return defaultColor;
+		Color retColor = defaultColor;
+		String[] cdata = mod.args;
+		if (cdata.length == 3) {
+			System.out.println("3 args, custom color");
+			retColor = new Color(Integer.parseInt(cdata[0]), Integer.parseInt(cdata[1]), Integer.parseInt(cdata[2]));
+		} else if (cdata.length == 1) {
+			System.out.println("1 arg, preset color");
+			Integer preset = -1;
+			try {
+				System.out.println("maybe number?");
+				preset = Integer.parseInt(cdata[0]);
+				if (TEXTBOX_PRESET_COLORS.containsKey(preset)) {
+					System.out.println(
+							"switching to preset color " + preset + ": " + TEXTBOX_PRESET_COLOR_NAMES.get(preset));
+					retColor = TEXTBOX_PRESET_COLORS.get(preset);
+				}
+			} catch (NumberFormatException e) {
+				System.out.println("not number, maybe color name?");
+				String cname = cdata[0].toLowerCase();
+				System.out.println(cname);
+				System.out.println("looking for value in color names");
+				for (Map.Entry<Integer, String> entry : TEXTBOX_PRESET_COLOR_NAMES.entrySet()) {
+					if (cname.equals(entry.getValue())) {
+						System.out.println("switching to preset color " + entry.getKey() + ": " + entry.getValue());
+						retColor = TEXTBOX_PRESET_COLORS.get(entry.getKey());
+					}
+				}
+			}
+		} else
+			System.out.println("no args, reset to default color");
+		return retColor;
 	}
 
 	private static void drawTextboxString(Graphics g, TextboxParseData tpd, int x, int y) {
@@ -280,27 +321,7 @@ public class TextboxUtil {
 					for (TextboxModifier mod : mods) {
 						if (mod.type == TextboxModifier.ModType.COLOR) {
 							System.out.println("mod is color mod!");
-							String[] cdata = mod.args;
-							if (cdata.length == 3) {
-								System.out.println("3 args, custom color");
-								g.setColor(new Color(Integer.parseInt(cdata[0]), Integer.parseInt(cdata[1]),
-										Integer.parseInt(cdata[2])));
-							} else if (cdata.length == 1) {
-								System.out.println("1 arg, preset color");
-								Integer preset = Integer.parseInt(cdata[0]);
-								if (TEXTBOX_PRESET_COLORS.containsKey(preset)) {
-									System.out.println("switching to preset color " + preset + ": "
-											+ TEXTBOX_PRESET_COLOR_NAMES.get(preset));
-									g.setColor(TEXTBOX_PRESET_COLORS.get(preset));
-								} else {
-									System.out.println(
-											"nonexistent preset color " + preset + ", resetting to default color");
-									g.setColor(defaultCol);
-								}
-							} else {
-								System.out.println("no args, reset to default color");
-								g.setColor(defaultCol);
-							}
+							g.setColor(getColorModValue(mod, defaultCol));
 						}
 					}
 				}
