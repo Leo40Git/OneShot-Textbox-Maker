@@ -93,13 +93,13 @@ public class PreviewPanel extends JPanel implements ActionListener {
 			try {
 				ImageIO.write(image, "png", sel);
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				Main.LOGGER.error("Error while saving image!", e1);
 				JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + e1,
 						"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
 			}
 			break;
 		default:
-			System.out.println("Undefined action: " + cmd);
+			Main.LOGGER.debug("Undefined action: " + cmd);
 		}
 	}
 

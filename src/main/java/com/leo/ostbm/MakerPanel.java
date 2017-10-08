@@ -445,7 +445,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			try {
 				Desktop.getDesktop().browse(new File("res/faces").toURI());
 			} catch (IOException e2) {
-				e2.printStackTrace();
+				Main.LOGGER.error("Error while browsing to face folder!", e2);
 			}
 			break;
 		case A_CUSTOM_FACE:
@@ -470,9 +470,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						}
 						Resources.addFace(faceName, sel, image);
 					} catch (IOException e1) {
-						e1.printStackTrace();
-						JOptionPane.showMessageDialog(this, "An exception occured while loading the face:\n" + e1,
-								"Couldn't load face!", JOptionPane.ERROR_MESSAGE);
+						Main.LOGGER.error("Error while loading facepic!", e1);
+						JOptionPane.showMessageDialog(this, "An exception occured while loading the facepic:\n" + e1,
+								"Couldn't load facepic!", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			}
@@ -628,7 +628,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				data = baos.toByteArray();
 				image = Toolkit.getDefaultToolkit().createImage(data);
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				Main.LOGGER.error("Error while generating animation!", e1);
 				JOptionPane.showMessageDialog(this, "An exception occured while generating the animation:\n" + e1,
 						"Couldn't generate animation!", JOptionPane.ERROR_MESSAGE);
 			}
@@ -664,7 +664,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					try (ImageOutputStream out = ImageIO.createImageOutputStream(sel)) {
 						out.write(fdata);
 					} catch (IOException e1) {
-						e1.printStackTrace();
+						Main.LOGGER.error("Error while saving animation!", e1);
 						JOptionPane.showMessageDialog(this, "An exception occured while saving the animation:\n" + e1,
 								"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
 					}
@@ -674,7 +674,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					try (ImageOutputStream out = ImageIO.createImageOutputStream(tmp)) {
 						out.write(fdata);
 					} catch (IOException e1) {
-						e1.printStackTrace();
+						Main.LOGGER.error("Error while copying animation to clipboard!", e1);
 						JOptionPane.showMessageDialog(this,
 								"An exception occured while copying the animation to the clipboard:\n" + e1,
 								"Couldn't copy animation to clipboard!", JOptionPane.ERROR_MESSAGE);
@@ -688,7 +688,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 							});
 					break;
 				default:
-					System.out.println("Undefined action: " + cmd);
+					Main.LOGGER.debug("Undefined action: " + cmd);
 					break;
 				}
 			}));
@@ -697,7 +697,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			previewFrame.setVisible(true);
 			break;
 		default:
-			System.out.println("Undefined action: " + a);
+			Main.LOGGER.debug("Undefined action: " + a);
 			break;
 		}
 	}
@@ -1063,12 +1063,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						char[] chars = lines[i].toCharArray();
 						for (int j = 0; j < chars.length; j++) {
 							char c = chars[j];
-							System.out.println("on char " + j + " (" + c + ")");
+							Main.LOGGER.trace("on char " + j + " (" + c + ")");
 							if (tpd.mods.containsKey(currentChar)) {
-								System.out.println("has mod(s)");
+								Main.LOGGER.trace("has mod(s)");
 								List<TextboxModifier> list = tpd.mods.get(currentChar);
 								for (TextboxModifier mod : list) {
-									System.out.println("processing mod type " + mod.type + ", position " + mod.position
+									Main.LOGGER.trace("processing mod type " + mod.type + ", position " + mod.position
 											+ ", length " + mod.length);
 									if (mod.type == TextboxModifier.ModType.FACE)
 										if (mod.args.length == 0)
@@ -1092,16 +1092,16 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 										curStyle = colorStyle;
 									}
 									stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
-									System.out.print(ignoreOff + " + " + mod.length + " = ");
+									Main.LOGGER.trace(ignoreOff + " + " + mod.length + " = ");
 									ignoreOff += mod.length;
-									System.out.println(ignoreOff);
+									Main.LOGGER.trace(ignoreOff);
 								}
 							}
 							stylDoc.setCharacterAttributes(currentChar + ignoreOff, 1, curStyle, true);
 							length++;
 							currentChar++;
 						}
-						System.out.println("length=" + length + ",ignoreOff=" + ignoreOff);
+						Main.LOGGER.trace("length=" + length + ",ignoreOff=" + ignoreOff);
 						int start = 0, end = 0;
 						Element line = doc.getDefaultRootElement().getElement(i);
 						start = line.getStartOffset();

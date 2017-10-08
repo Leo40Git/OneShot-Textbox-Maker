@@ -104,21 +104,21 @@ public class TextboxUtil {
 		int posDelta = 0, pos = 0, realPos = 0;
 		for (String token : tokenList) {
 			int realLength = token.replaceAll("\n", "").length();
-			System.out.println("realLength=" + realLength);
-			System.out.println("realPos=" + realPos);
-			System.out.println("pos=" + pos);
-			System.out.println("token=" + token);
+			Main.LOGGER.trace("realLength=" + realLength);
+			Main.LOGGER.trace("realPos=" + realPos);
+			Main.LOGGER.trace("pos=" + pos);
+			Main.LOGGER.trace("token=" + token);
 			boolean doModCheck = true;
 			if (!token.startsWith("\\")) {
-				System.out.println("not a mod");
+				Main.LOGGER.trace("not a mod");
 				doModCheck = false;
 			} else if (token.length() <= 1) {
-				System.out.println("too short");
+				Main.LOGGER.trace("too short");
 				doModCheck = false;
 			}
 			if (doModCheck) {
 				char modChar = token.charAt(1);
-				System.out.println("modChar=" + modChar);
+				Main.LOGGER.trace("modChar=" + modChar);
 				TextboxModifier.ModType modType = null;
 				switch (modChar) {
 				case 'd':
@@ -134,7 +134,7 @@ public class TextboxUtil {
 					modType = TextboxModifier.ModType.FACE;
 					break;
 				}
-				System.out.println("modType=" + modType);
+				Main.LOGGER.trace("modType=" + modType);
 				if (modType != null) {
 					TextboxModifier mod = new TextboxModifier();
 					mod.type = modType;
@@ -145,12 +145,12 @@ public class TextboxUtil {
 					char third = 0;
 					if (token.length() > 2)
 						third = token.charAt(2);
-					System.out.println("3rd char is " + third + ", should be [");
+					Main.LOGGER.trace("3rd char is " + third + ", should be [");
 					if (!noArgs && (third != '[' || token.indexOf(']') == -1)) {
 						if (noArgsPossible)
 							noArgs = true;
 						else {
-							System.out.println("missing argument decleration");
+							Main.LOGGER.trace("missing argument decleration");
 							strippedBuilder.append(token);
 							continue;
 						}
@@ -176,8 +176,8 @@ public class TextboxUtil {
 						}
 					}
 					mod.position = realPos;
-					System.out.println("mod position in unstripped string is " + mod.position);
-					System.out.println("mod has been put at position " + pos);
+					Main.LOGGER.trace("mod position in unstripped string is " + mod.position);
+					Main.LOGGER.trace("mod has been put at position " + pos);
 					if (ret.mods.containsKey(pos))
 						ret.mods.get(pos).add(mod);
 					else {
@@ -187,8 +187,8 @@ public class TextboxUtil {
 					}
 				}
 			}
-			System.out.println("strippedToken=" + token);
-			System.out.println("pos=" + pos + ",posDelta=" + posDelta);
+			Main.LOGGER.trace("strippedToken=" + token);
+			Main.LOGGER.trace("pos=" + pos + ",posDelta=" + posDelta);
 			pos += realLength;
 			pos -= posDelta;
 			posDelta = 0;
@@ -270,34 +270,35 @@ public class TextboxUtil {
 			return defaultColor;
 		Color retColor = defaultColor;
 		String[] cdata = mod.args;
+		Main.LOGGER.trace("attempting to get color mod value");
 		if (cdata.length == 3) {
-			System.out.println("3 args, custom color");
+			Main.LOGGER.trace("3 args, custom color");
 			retColor = new Color(Integer.parseInt(cdata[0]), Integer.parseInt(cdata[1]), Integer.parseInt(cdata[2]));
 		} else if (cdata.length == 1) {
-			System.out.println("1 arg, preset color");
+			Main.LOGGER.trace("1 arg, preset color");
 			Integer preset = -1;
 			try {
-				System.out.println("maybe number?");
+				Main.LOGGER.trace("maybe number?");
 				preset = Integer.parseInt(cdata[0]);
 				if (TEXTBOX_PRESET_COLORS.containsKey(preset)) {
-					System.out.println(
+					Main.LOGGER.trace(
 							"switching to preset color " + preset + ": " + TEXTBOX_PRESET_COLOR_NAMES.get(preset));
 					retColor = TEXTBOX_PRESET_COLORS.get(preset);
 				}
 			} catch (NumberFormatException e) {
-				System.out.println("not number, maybe color name?");
+				Main.LOGGER.trace("not number, maybe color name?");
 				String cname = cdata[0].toLowerCase();
-				System.out.println(cname);
-				System.out.println("looking for value in color names");
+				Main.LOGGER.trace(cname);
+				Main.LOGGER.trace("looking for value in color names");
 				for (Map.Entry<Integer, String> entry : TEXTBOX_PRESET_COLOR_NAMES.entrySet()) {
 					if (cname.equals(entry.getValue())) {
-						System.out.println("switching to preset color " + entry.getKey() + ": " + entry.getValue());
+						Main.LOGGER.trace("switching to preset color " + entry.getKey() + ": " + entry.getValue());
 						retColor = TEXTBOX_PRESET_COLORS.get(entry.getKey());
 					}
 				}
 			}
 		} else
-			System.out.println("no args, reset to default color");
+			Main.LOGGER.trace("no args, reset to default color");
 		return retColor;
 	}
 
@@ -314,13 +315,13 @@ public class TextboxUtil {
 			x = startX;
 			char[] chars = line.toCharArray();
 			for (int i = 0; i < chars.length; i++) {
-				System.out.println("drawing character " + i + " (absolute pos " + currentChar + ")");
+				Main.LOGGER.trace("drawing character " + i + " (absolute pos " + currentChar + ")");
 				if (tpd.mods.containsKey(currentChar)) {
-					System.out.println("has mod(s)!");
+					Main.LOGGER.trace("has mod(s)!");
 					List<TextboxModifier> mods = tpd.mods.get(currentChar);
 					for (TextboxModifier mod : mods) {
 						if (mod.type == TextboxModifier.ModType.COLOR) {
-							System.out.println("mod is color mod!");
+							Main.LOGGER.trace("mod is color mod!");
 							g.setColor(getColorModValue(mod, defaultCol));
 						}
 					}
@@ -357,7 +358,7 @@ public class TextboxUtil {
 							try {
 								newDelay = Integer.parseInt(mod.args[0]);
 							} catch (NumberFormatException e) {
-								e.printStackTrace();
+								Main.LOGGER.error("Error while parsing delay!", e);
 								newDelay = delay;
 							}
 							delay = newDelay;
@@ -383,18 +384,18 @@ public class TextboxUtil {
 				delay = 1;
 			}
 			boolean endsWithInterrupt = false;
-			System.out.println("looking for mod at end of string (" + (text.length()) + ")");
+			Main.LOGGER.trace("looking for mod at end of string (" + (text.length()) + ")");
 			if (tpd.mods.containsKey(text.length())) {
-				System.out.println("found mod at end of string");
+				Main.LOGGER.trace("found mod at end of string");
 				List<TextboxModifier> mods = tpd.mods.get(text.length());
 				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INTERRUPT) {
-					System.out.println("mod is INTERRUPT");
+					Main.LOGGER.trace("mod is INTERRUPT");
 					endsWithInterrupt = true;
 				} else {
-					System.out.println("mod is not INTERRUPT");
+					Main.LOGGER.trace("mod is not INTERRUPT");
 				}
 			} else {
-				System.out.println("no mod at end of string");
+				Main.LOGGER.trace("no mod at end of string");
 			}
 			if (!endsWithInterrupt) {
 				if (i == boxes.size() - 1) {

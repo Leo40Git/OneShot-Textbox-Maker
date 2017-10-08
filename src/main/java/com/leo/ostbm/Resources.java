@@ -226,10 +226,10 @@ public class Resources {
 				try {
 					addFace(face);
 				} catch (Exception e) {
-					e.printStackTrace();
+					Main.LOGGER.error("Error while loading facepic!", e);
 					JOptionPane.showMessageDialog(null,
-							"Could not load face " + face.getName() + "!\n(at " + face.getAbsolutePath() + ")\n" + e,
-							"Could not load face!", JOptionPane.ERROR_MESSAGE);
+							"Could not load facepic " + face.getName() + "!\n(at " + face.getAbsolutePath() + ")\n" + e,
+							"Could not load facepic!", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 	}

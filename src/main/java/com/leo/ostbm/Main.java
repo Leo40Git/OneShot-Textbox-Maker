@@ -11,14 +11,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -44,9 +40,14 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.leo.ostbm.Resources.Icon;
 
 public class Main {
+
+	public static final Logger LOGGER = LogManager.getLogger("OSTBM");
 
 	public static final Version VERSION = new Version("1.7");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
@@ -65,40 +66,10 @@ public class Main {
 	private static JFrame frame;
 	private static MakerPanel panel;
 
-	static class FNCPrintStream extends PrintStream {
-
-		private PrintStream consoleOut;
-
-		public FNCPrintStream(OutputStream file, boolean err) throws FileNotFoundException {
-			super(file);
-			if (err)
-				consoleOut = new PrintStream(new FileOutputStream(FileDescriptor.err));
-			else
-				consoleOut = new PrintStream(new FileOutputStream(FileDescriptor.out));
-		}
-
-		@Override
-		public void write(int b) {
-			synchronized (this) {
-				super.write(b);
-				consoleOut.write(b);
-			}
-		}
-
-		@Override
-		public void write(byte[] buf, int off, int len) {
-			synchronized (this) {
-				super.write(buf, off, len);
-				consoleOut.write(buf, off, len);
-			}
-		}
-	}
-
 	static class MenuActionListener implements ActionListener {
 
 		public static void fileError(String command, IOException e, String title, String message) {
-			System.err.println("File command \"" + command + "\" failed!");
-			e.printStackTrace();
+			LOGGER.error("File command \"" + command + "\" failed!", e);
 			JOptionPane.showMessageDialog(frame, message, title, JOptionPane.ERROR_MESSAGE);
 		}
 
@@ -156,7 +127,7 @@ public class Main {
 						"About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE);
 				break;
 			default:
-				System.out.println("Undefined action: " + e.getActionCommand());
+				LOGGER.debug("Undefined action: " + e.getActionCommand());
 				break;
 			}
 		}
@@ -178,35 +149,15 @@ public class Main {
 			System.exit(0);
 		}
 		Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
-		File log = new File("ostbm.log");
-		if (log.exists())
-			log.delete();
-		try {
-			log.createNewFile();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		FileOutputStream logOut = null;
-		try {
-			logOut = new FileOutputStream(log);
-		} catch (FileNotFoundException e2) {
-			e2.printStackTrace();
-		}
-		try {
-			System.setOut(new FNCPrintStream(logOut, false));
-			System.setErr(new FNCPrintStream(logOut, true));
-		} catch (FileNotFoundException e1) {
-			System.exit(1);
-		}
 		final String nolaf = "nolaf";
 		if (new File(System.getProperty("user.dir") + "/" + nolaf).exists())
-			System.out.println("No L&F file detected, skipping setting Look & Feel");
+			LOGGER.info("No L&F file detected, skipping setting Look & Feel");
 		else
 			try {
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 					| UnsupportedLookAndFeelException e) {
-				e.printStackTrace();
+				LOGGER.error("Error while setting Look & Feel!", e);
 				JOptionPane.showMessageDialog(null, "Could not set Look & Feel!\nPlease add a file named \"" + nolaf
 						+ "\" (all lowercase, no extension) to the application folder, and then restart the application.",
 						"Could not set Look & Feel", JOptionPane.ERROR_MESSAGE);
@@ -222,7 +173,7 @@ public class Main {
 			skipucF = skipucR;
 		}
 		if (skipucF) {
-			System.out.println("Update check: skip file detected, skipping");
+			LOGGER.info("Update check: skip file detected, skipping");
 			loadFrame = new LoadFrame();
 		} else {
 			loadFrame = updateCheck(false, false);
@@ -330,7 +281,7 @@ public class Main {
 
 	private static void resourceError(Throwable e) {
 		if (e != null)
-			e.printStackTrace();
+			LOGGER.error("Error while loading resources!", e);
 		JOptionPane.showMessageDialog(null, "Could not load resources!\nPlease report this error here:\n" + ISSUES_SITE,
 				"Could not load resources!", JOptionPane.ERROR_MESSAGE);
 		System.exit(1);
@@ -357,21 +308,20 @@ public class Main {
 	public static LoadFrame updateCheck(boolean disposeOfLoadFrame, boolean showUpToDate) {
 		LoadFrame loadFrame = new LoadFrame();
 		File verFile = new File(System.getProperty("user.dir") + "/temp.version");
-		System.out.println("Update check: starting");
+		LOGGER.info("Update check: starting");
 		try {
 			downloadFile(UPDATE_CHECK_SITE, verFile);
 		} catch (IOException e1) {
-			System.err.println("Update check failed: attempt to download caused exception");
-			e1.printStackTrace();
+			LOGGER.error("Update check failed: attempt to download caused exception", e1);
 			JOptionPane.showMessageDialog(null, "The update check has failed!\nAre you not connected to the internet?",
 					"Update check failed", JOptionPane.ERROR_MESSAGE);
 		}
 		if (verFile.exists()) {
-			System.out.println("Update check: reading version");
+			LOGGER.info("Update check: reading version");
 			try (FileReader fr = new FileReader(verFile); BufferedReader reader = new BufferedReader(fr);) {
 				Version check = new Version(reader.readLine());
 				if (VERSION.compareTo(check) < 0) {
-					System.out.println("Update check successful: have update");
+					LOGGER.info("Update check successful: have update");
 					JPanel panel = new JPanel();
 					panel.setLayout(new BorderLayout());
 					panel.add(new JLabel("A new update is available: " + check), BorderLayout.PAGE_START);
@@ -402,7 +352,7 @@ public class Main {
 						System.exit(0);
 					}
 				} else {
-					System.out.println("Update check successful: up to date");
+					LOGGER.info("Update check successful: up to date");
 					if (showUpToDate) {
 						JOptionPane.showMessageDialog(null,
 								"You are using the most up to date version of the OneShot Textbox Maker! Have fun!",
@@ -410,21 +360,19 @@ public class Main {
 					}
 				}
 			} catch (IOException e) {
-				System.err.println("Update check failed: attempt to read downloaded file caused exception");
-				e.printStackTrace();
+				LOGGER.error("Update check failed: attempt to read downloaded file caused exception", e);
 				JOptionPane.showMessageDialog(null,
 						"The update check has failed!\nAn exception occured while reading update check results:\n" + e,
 						"Update check failed", JOptionPane.ERROR_MESSAGE);
 			} catch (URISyntaxException e1) {
-				System.out.println("Browse to download site failed: bad URI syntax");
-				e1.printStackTrace();
+				LOGGER.error("Browse to download site failed: bad URI syntax", e1);
 				JOptionPane.showMessageDialog(null, "Failed to browse to the download site...",
 						"Well, this is awkward.", JOptionPane.ERROR_MESSAGE);
 			} finally {
 				verFile.delete();
 			}
 		} else
-			System.err.println("Update check failed: downloaded file doesn't exist");
+			LOGGER.error("Update check failed: downloaded file doesn't exist");
 		if (disposeOfLoadFrame) {
 			loadFrame.dispose();
 			return null;
