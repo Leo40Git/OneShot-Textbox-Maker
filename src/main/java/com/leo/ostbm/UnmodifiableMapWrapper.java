@@ -57,17 +57,17 @@ public class UnmodifiableMapWrapper<K, V> implements Map<K, V> {
 
 	@Override
 	public Set<K> keySet() {
-		return wrapped.keySet();
+		return new UnmodifiableSetWrapper<>(wrapped.keySet());
 	}
 
 	@Override
 	public Collection<V> values() {
-		return wrapped.values();
+		return new UnmodifiableCollectionWrapper<>(wrapped.values());
 	}
 
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		return wrapped.entrySet();
+		return new UnmodifiableSetWrapper<>(wrapped.entrySet());
 	}
 
 }
