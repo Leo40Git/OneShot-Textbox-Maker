@@ -7,7 +7,7 @@
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="${sd:pattern}" />
 		</Console>
-		<File name="File" fileName="obstm.log">
+		<File name="File" fileName="ostbm.log">
 			<PatternLayout pattern="${sd:pattern}" />
 			<ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />
 		</File>
