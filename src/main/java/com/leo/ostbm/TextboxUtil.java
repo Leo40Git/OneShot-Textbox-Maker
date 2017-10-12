@@ -176,6 +176,13 @@ public class TextboxUtil {
 						}
 					}
 					mod.position = realPos;
+					int pos2 = pos;
+					if (mod.type == TextboxModifier.ModType.DELAY) {
+						mod.length++;
+						pos--;
+						if (pos < 0)
+							pos = 0;
+					}
 					Main.LOGGER.trace("mod position in unstripped string is " + mod.position);
 					Main.LOGGER.trace("mod has been put at position " + pos);
 					if (ret.mods.containsKey(pos))
@@ -185,6 +192,8 @@ public class TextboxUtil {
 						modList.add(mod);
 						ret.mods.put(pos, modList);
 					}
+					if (mod.type == TextboxModifier.ModType.DELAY)
+						pos = pos2;
 				}
 			}
 			Main.LOGGER.trace("strippedToken=" + token);
