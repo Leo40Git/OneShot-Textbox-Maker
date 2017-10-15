@@ -85,8 +85,15 @@ public class TextboxUtil {
 			mods = new HashMap<>();
 		}
 	}
+	
+	private static Map<String, TextboxParseData> tpdCache;
 
 	public static TextboxParseData parseTextbox(String text) {
+		if (tpdCache == null)
+			tpdCache = new HashMap<>();
+		else
+			if (tpdCache.containsKey(text))
+				return tpdCache.get(text);
 		TextboxParseData ret = new TextboxParseData();
 		StringBuilder strippedBuilder = new StringBuilder();
 		List<String> tokenList = new ArrayList<>();
@@ -205,6 +212,7 @@ public class TextboxUtil {
 			strippedBuilder.append(token);
 		}
 		ret.strippedText = strippedBuilder.toString();
+		tpdCache.put(text, ret);
 		return ret;
 	}
 

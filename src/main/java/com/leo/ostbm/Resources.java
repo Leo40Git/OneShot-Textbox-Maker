@@ -171,7 +171,11 @@ public class Resources {
 	public static BufferedImage getTextboxArrow() {
 		return textboxArrow;
 	}
-
+	
+	public static final int APPICON_16 = 0;
+	public static final int APPICON_32 = 1;
+	public static final int APPICON_64 = 2;
+	
 	public static List<BufferedImage> getAppIcons() {
 		return appIcons;
 	}

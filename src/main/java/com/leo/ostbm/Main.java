@@ -23,6 +23,7 @@ import java.nio.channels.ReadableByteChannel;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -60,13 +61,15 @@ public class Main {
 	public static final String A_FILE_SAVE_AS = "file:saveAs";
 	public static final String A_FILE_SETTINGS = "file:settings";
 	public static final String A_FILE_EXIT = "file:exit";
-	public static final String A_QUESTION_UPDATE = "question:update";
-	public static final String A_QUESTION_ABOUT = "question:about";
+	public static final String A_HELP_UPDATE = "help:update";
+	public static final String A_HELP_ABOUT = "help:about";
 
 	private static JFrame frame;
 	private static MakerPanel panel;
 
 	static class MenuActionListener implements ActionListener {
+
+		private ImageIcon aboutIcon;
 
 		public static void fileError(String command, IOException e, String title, String message) {
 			LOGGER.error("File command \"" + command + "\" failed!", e);
@@ -115,16 +118,18 @@ public class Main {
 			case A_FILE_EXIT:
 				close();
 				break;
-			// "?" Menu
-			case A_QUESTION_UPDATE:
+			// "Help" Menu
+			case A_HELP_UPDATE:
 				SwingUtilities.invokeLater(() -> {
 					Main.updateCheck(true, true);
 				});
 				break;
-			case A_QUESTION_ABOUT:
-				JOptionPane.showMessageDialog(frame,
-						"OneShot Textbox Maker (OSTBM) version " + VERSION + "\nMade by Leo",
-						"About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE);
+			case A_HELP_ABOUT:
+				if (aboutIcon == null)
+					aboutIcon = new ImageIcon(Resources.getAppIcons().get(Resources.APPICON_32), "About");
+				JOptionPane.showMessageDialog(frame, "OneShot Textbox Maker (OSTBM) version " + VERSION
+						+ "\nMade by Leo\nFacepic credits:\n\"original\" and \"solstice\" - Nightmargin, GIR and Elizavq\n\"osdiscord\" - OneShot Discord Server",
+						"About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE, aboutIcon);
 				break;
 			default:
 				LOGGER.debug("Undefined action: " + e.getActionCommand());
@@ -245,16 +250,16 @@ public class Main {
 		miFileExit.addActionListener(l);
 		miFileExit.setActionCommand(A_FILE_EXIT);
 		mFile.add(miFileExit);
-		JMenu mQuestion = new JMenu("?");
-		// "?" Menu
+		JMenu mQuestion = new JMenu("Help");
+		// "Help" Menu
 		JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates", Resources.getIcon(Icon.CHECK_FOR_UPDATES));
 		miQuestionUpdate.addActionListener(l);
-		miQuestionUpdate.setActionCommand(A_QUESTION_UPDATE);
+		miQuestionUpdate.setActionCommand(A_HELP_UPDATE);
 		mQuestion.add(miQuestionUpdate);
 		mQuestion.addSeparator();
 		JMenuItem miQuestionAbout = new JMenuItem("About OSTBM", Resources.getIcon(Icon.ABOUT));
 		miQuestionAbout.addActionListener(l);
-		miQuestionAbout.setActionCommand(A_QUESTION_ABOUT);
+		miQuestionAbout.setActionCommand(A_HELP_ABOUT);
 		mQuestion.add(miQuestionAbout);
 		mb.add(mQuestion);
 		return mb;
