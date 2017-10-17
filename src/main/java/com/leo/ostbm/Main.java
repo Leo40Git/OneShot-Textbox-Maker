@@ -130,7 +130,7 @@ public class Main {
 				JOptionPane.showMessageDialog(frame,
 						"OneShot Textbox Maker (OSTBM) version " + VERSION + "\nMade by Leo\nFacepic credits:\n"
 								+ "\"original\" and \"solstice\" - Nightmargin, GIR and Elizavq\n"
-								+ "\"osdiscord\" - OneShot Discord Server\n" + "\"ninja8tyu\" - ninja8tyu.tumblr.com\n"
+								+ "\"osdiscord\" - People from OneShot Discord Server\n" + "\"ninja8tyu\" - ninja8tyu.tumblr.com\n"
 								+ "\"tehawesomestkitteh\" - tehawesomestkitteh.tumblr.com",
 						"About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE, aboutIcon);
 				break;
