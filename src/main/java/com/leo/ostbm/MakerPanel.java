@@ -655,7 +655,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						return;
 					if (sel.exists()) {
 						int confirm = JOptionPane.showConfirmDialog(this,
-								"File \"" + sel.getName() + "\" already exists?\nOverwrite it?",
+								"File \"" + sel.getName() + "\" already exists.\nOverwrite it?",
 								"Overwrite existing file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 						if (confirm != JOptionPane.YES_OPTION)
 							return;
