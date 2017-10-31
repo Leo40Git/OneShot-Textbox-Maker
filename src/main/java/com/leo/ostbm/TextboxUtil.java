@@ -86,15 +86,14 @@ public class TextboxUtil {
 			mods = new HashMap<>();
 		}
 	}
-	
+
 	private static Map<String, TextboxParseData> tpdCache;
 
 	public static TextboxParseData parseTextbox(String text) {
 		if (tpdCache == null)
 			tpdCache = new HashMap<>();
-		else
-			if (tpdCache.containsKey(text))
-				return tpdCache.get(text);
+		else if (tpdCache.containsKey(text))
+			return tpdCache.get(text);
 		TextboxParseData ret = new TextboxParseData();
 		StringBuilder strippedBuilder = new StringBuilder();
 		List<String> tokenList = new ArrayList<>();
@@ -304,14 +303,30 @@ public class TextboxUtil {
 					retColor = TEXTBOX_PRESET_COLORS.get(preset);
 				}
 			} catch (NumberFormatException e) {
-				Main.LOGGER.trace("not number, maybe color name?");
-				String cname = cdata[0].toLowerCase();
-				Main.LOGGER.trace(cname);
-				Main.LOGGER.trace("looking for value in color names");
-				for (Map.Entry<Integer, String> entry : TEXTBOX_PRESET_COLOR_NAMES.entrySet()) {
-					if (cname.equals(entry.getValue())) {
-						Main.LOGGER.trace("switching to preset color " + entry.getKey() + ": " + entry.getValue());
-						retColor = TEXTBOX_PRESET_COLORS.get(entry.getKey());
+				String col = cdata[0];
+				if (col.toLowerCase().startsWith("h:")) {
+					Main.LOGGER.trace("not number, maybe hex color?");
+					if (col.length() < 8) {
+						Main.LOGGER.trace("not long enough");
+						return retColor;
+					}
+					col = col.substring(0, 8);
+					try {
+						retColor = Color.decode("0x" + col.substring(2));
+					} catch (NumberFormatException e1) {
+						Main.LOGGER.trace("not hex color");
+					}
+				} else {
+					Main.LOGGER.trace("not number, maybe color name?");
+					String cname = cdata[0].toLowerCase();
+					Main.LOGGER.trace(cname);
+					Main.LOGGER.trace("looking for value in color names");
+					for (Map.Entry<Integer, String> entry : TEXTBOX_PRESET_COLOR_NAMES.entrySet()) {
+						if (cname.equals(entry.getValue())) {
+							Main.LOGGER.trace("switching to preset color " + entry.getKey() + ": " + entry.getValue());
+							retColor = TEXTBOX_PRESET_COLORS.get(entry.getKey());
+							break;
+						}
 					}
 				}
 			}
