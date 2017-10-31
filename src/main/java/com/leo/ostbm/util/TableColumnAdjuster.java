@@ -1,4 +1,4 @@
-package com.leo.ostbm;
+package com.leo.ostbm.util;
 
 import java.awt.*;
 import java.awt.event.*;

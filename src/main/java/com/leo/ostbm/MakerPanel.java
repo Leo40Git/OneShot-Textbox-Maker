@@ -99,6 +99,7 @@ import com.leo.ostbm.Resources.Icon;
 import com.leo.ostbm.TextboxUtil.Textbox;
 import com.leo.ostbm.TextboxUtil.TextboxModifier;
 import com.leo.ostbm.TextboxUtil.TextboxParseData;
+import com.leo.ostbm.util.TableColumnAdjuster;
 
 public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener, ItemListener {
 

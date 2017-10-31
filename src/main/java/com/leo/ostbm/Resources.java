@@ -123,13 +123,16 @@ public class Resources {
 		ge.registerFont(textboxFont);
 	}
 
-	public static void initImages() throws IOException, URISyntaxException {
-		textboxImage = ImageIO.read(new File("res/textboxImage.png"));
-		textboxArrow = ImageIO.read(new File("res/textboxArrow.png"));
+	public static void initAppIcons() throws IOException {
 		appIcons = new LinkedList<>();
 		final String[] sizes = new String[] { "16", "32", "64" };
 		for (String size : sizes)
 			appIcons.add(ImageIO.read(Resources.class.getResourceAsStream("/appicon" + size + ".png")));
+	}
+
+	public static void initImages() throws IOException, URISyntaxException {
+		textboxImage = ImageIO.read(new File("res/textboxImage.png"));
+		textboxArrow = ImageIO.read(new File("res/textboxArrow.png"));
 		BufferedImage iconSheet = ImageIO.read(Resources.class.getResourceAsStream("/icons.png"));
 		icons = new HashMap<>();
 		int ix = 0, iy = 0;
@@ -171,11 +174,11 @@ public class Resources {
 	public static BufferedImage getTextboxArrow() {
 		return textboxArrow;
 	}
-	
+
 	public static final int APPICON_16 = 0;
 	public static final int APPICON_32 = 1;
 	public static final int APPICON_64 = 2;
-	
+
 	public static List<BufferedImage> getAppIcons() {
 		return appIcons;
 	}

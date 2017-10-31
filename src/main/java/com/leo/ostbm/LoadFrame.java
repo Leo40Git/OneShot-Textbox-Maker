@@ -36,6 +36,7 @@ public class LoadFrame extends JFrame {
 		add(loadLabel);
 		pack();
 		setLocationRelativeTo(null);
+		setIconImages(Resources.getAppIcons());
 		setVisible(true);
 		requestFocus();
 	}

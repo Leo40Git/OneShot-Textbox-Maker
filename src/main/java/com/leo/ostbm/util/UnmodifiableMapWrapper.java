@@ -1,4 +1,4 @@
-package com.leo.ostbm;
+package com.leo.ostbm.util;
 
 import java.util.Collection;
 import java.util.Map;

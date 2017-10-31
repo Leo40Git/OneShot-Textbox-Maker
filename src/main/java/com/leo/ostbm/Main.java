@@ -21,10 +21,7 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -65,7 +62,16 @@ public class Main {
 	public static final String A_HELP_ABOUT = "help:about";
 
 	private static JFrame frame;
+	
+	public static JFrame getFrame() {
+		return frame;
+	}
+	
 	private static MakerPanel panel;
+	
+	public static MakerPanel getPanel() {
+		return panel;
+	}
 
 	static class MenuActionListener implements ActionListener {
 
@@ -172,6 +178,11 @@ public class Main {
 				System.exit(1);
 			}
 		Config.init();
+		try {
+			Resources.initAppIcons();
+		} catch (IOException e1) {
+			resourceError(e1);
+		}
 		LoadFrame loadFrame;
 		final String skipuc = "skipuc";
 		boolean skipucF = new File(System.getProperty("user.dir") + "/" + skipuc).exists();
@@ -287,7 +298,7 @@ public class Main {
 		}
 	}
 
-	private static void resourceError(Throwable e) {
+	public static void resourceError(Throwable e) {
 		if (e != null)
 			LOGGER.error("Error while loading resources!", e);
 		JOptionPane.showMessageDialog(null, "Could not load resources!\nPlease report this error here:\n" + ISSUES_SITE,
@@ -420,31 +431,7 @@ public class Main {
 	private static void openSettings() {
 		JDialog settingsFrame = new JDialog(frame, "Settings", true);
 		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		JPanel settingsPanel = new JPanel();
-		settingsPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		JPanel spoilerPanel = new JPanel();
-		spoilerPanel.setLayout(new BoxLayout(spoilerPanel, BoxLayout.PAGE_AXIS));
-		spoilerPanel.setBorder(BorderFactory.createTitledBorder("Spoilers"));
-		spoilerPanel.add(new JLabel(
-				"<html>By default, OSTBM hides facepics that are exclusive to the Solstice route to prevent spoilers.<br>Please note that changing this will reload all facepics and <b>remove all custom facepics</b>.</html>"));
-		JCheckBox solsticeFacepics = new JCheckBox("Hide Solstice facepics",
-				Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
-		solsticeFacepics.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				Config.setBoolean(Config.KEY_HIDE_SOLSTICE_FACES, solsticeFacepics.isSelected());
-				try {
-					panel.updateCurrentBox();
-					Resources.initFaces();
-					panel.updateFaces();
-				} catch (IOException e1) {
-					resourceError(e1);
-				}
-			}
-		});
-		spoilerPanel.add(solsticeFacepics);
-		settingsPanel.add(spoilerPanel);
-		settingsFrame.add(settingsPanel);
+		settingsFrame.add(new SettingsPanel());
 		settingsFrame.pack();
 		settingsFrame.setLocationRelativeTo(null);
 		settingsFrame.setIconImage(Resources.getIcon(Icon.SETTINGS).getImage());

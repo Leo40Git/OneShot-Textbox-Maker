@@ -1,14 +1,13 @@
-package com.leo.ostbm;
+package com.leo.ostbm.util;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Set;
 
-public class UnmodifiableSetWrapper<V> implements Set<V> {
+public class UnmodifiableCollectionWrapper<E> implements Collection<E> {
 	
-	private Set<V> wrapped;
+	private Collection<E> wrapped;
 	
-	public UnmodifiableSetWrapper(Set<V> wrapped) {
+	public UnmodifiableCollectionWrapper(Collection<E> wrapped) {
 		this.wrapped = wrapped;
 	}
 
@@ -28,7 +27,7 @@ public class UnmodifiableSetWrapper<V> implements Set<V> {
 	}
 
 	@Override
-	public Iterator<V> iterator() {
+	public Iterator<E> iterator() {
 		return wrapped.iterator();
 	}
 
@@ -43,7 +42,7 @@ public class UnmodifiableSetWrapper<V> implements Set<V> {
 	}
 
 	@Override
-	public boolean add(V e) {
+	public boolean add(E e) {
 		return false;
 	}
 
@@ -58,17 +57,17 @@ public class UnmodifiableSetWrapper<V> implements Set<V> {
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends V> c) {
-		return false;
-	}
-
-	@Override
-	public boolean retainAll(Collection<?> c) {
+	public boolean addAll(Collection<? extends E> c) {
 		return false;
 	}
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
+		return false;
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
 		return false;
 	}
 
