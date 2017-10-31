@@ -318,7 +318,7 @@ public class TextboxUtil {
 					}
 				} else {
 					Main.LOGGER.trace("not number, maybe color name?");
-					String cname = cdata[0].toLowerCase();
+					String cname = col.toLowerCase();
 					Main.LOGGER.trace(cname);
 					Main.LOGGER.trace("looking for value in color names");
 					for (Map.Entry<Integer, String> entry : TEXTBOX_PRESET_COLOR_NAMES.entrySet()) {
