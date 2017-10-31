@@ -1,13 +1,14 @@
 package com.leo.ostbm.util;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class UnmodifiableMapWrapper<K, V> implements Map<K, V> {
-	
+
 	private Map<K, V> wrapped;
-	
+
 	public UnmodifiableMapWrapper(Map<K, V> wrapped) {
 		this.wrapped = wrapped;
 	}
@@ -65,9 +66,39 @@ public class UnmodifiableMapWrapper<K, V> implements Map<K, V> {
 		return new UnmodifiableCollectionWrapper<>(wrapped.values());
 	}
 
+	@SuppressWarnings("hiding")
+	public class UnmodifiableEntryWrapper<K, V> implements Entry<K, V> {
+
+		private Entry<K, V> wrapped;
+
+		public UnmodifiableEntryWrapper(Entry<K, V> wrapped) {
+			this.wrapped = wrapped;
+		}
+
+		@Override
+		public K getKey() {
+			return wrapped.getKey();
+		}
+
+		@Override
+		public V getValue() {
+			return wrapped.getValue();
+		}
+
+		@Override
+		public V setValue(V value) {
+			return null;
+		}
+
+	}
+
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		return new UnmodifiableSetWrapper<>(wrapped.entrySet());
+		Set<Entry<K, V>> entrySet = wrapped.entrySet();
+		Set<Entry<K, V>> wEntrySet = new HashSet<>();
+		for (Entry<K, V> entry : entrySet)
+			wEntrySet.add(new UnmodifiableEntryWrapper<>(entry));
+		return wEntrySet;
 	}
 
 }
