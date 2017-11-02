@@ -1063,14 +1063,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					for (int i = 0; i < lines.length; i++) {
 						char[] chars = lines[i].toCharArray();
 						for (int j = 0; j < chars.length; j++) {
-							char c = chars[j];
-							Main.LOGGER.trace("on char " + j + " (" + c + ")");
 							if (tpd.mods.containsKey(currentChar)) {
-								Main.LOGGER.trace("has mod(s)");
 								List<TextboxModifier> list = tpd.mods.get(currentChar);
 								for (TextboxModifier mod : list) {
-									Main.LOGGER.trace("processing mod type " + mod.type + ", position " + mod.position
-											+ ", length " + mod.length);
 									if (mod.type == TextboxModifier.ModType.FACE)
 										if (mod.args.length == 0)
 											maxLen = 57;
@@ -1093,16 +1088,13 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 										curStyle = colorStyle;
 									}
 									stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
-									Main.LOGGER.trace(ignoreOff + " + " + mod.length + " = ");
 									ignoreOff += mod.length;
-									Main.LOGGER.trace(ignoreOff);
 								}
 							}
 							stylDoc.setCharacterAttributes(currentChar + ignoreOff, 1, curStyle, true);
 							length++;
 							currentChar++;
 						}
-						Main.LOGGER.trace("length=" + length + ",ignoreOff=" + ignoreOff);
 						int start = 0, end = 0;
 						Element line = doc.getDefaultRootElement().getElement(i);
 						start = line.getStartOffset();

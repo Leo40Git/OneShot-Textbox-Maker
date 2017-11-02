@@ -87,12 +87,10 @@ public class TextboxUtil {
 		}
 	}
 
-	private static Map<String, TextboxParseData> tpdCache;
+	private static final Map<String, TextboxParseData> tpdCache = new HashMap<>();
 
 	public static TextboxParseData parseTextbox(String text) {
-		if (tpdCache == null)
-			tpdCache = new HashMap<>();
-		else if (tpdCache.containsKey(text))
+		if (tpdCache.containsKey(text))
 			return tpdCache.get(text);
 		TextboxParseData ret = new TextboxParseData();
 		StringBuilder strippedBuilder = new StringBuilder();
@@ -111,21 +109,11 @@ public class TextboxUtil {
 		int posDelta = 0, pos = 0, realPos = 0;
 		for (String token : tokenList) {
 			int realLength = token.replaceAll("\n", "").length();
-			Main.LOGGER.trace("realLength=" + realLength);
-			Main.LOGGER.trace("realPos=" + realPos);
-			Main.LOGGER.trace("pos=" + pos);
-			Main.LOGGER.trace("token=" + token);
 			boolean doModCheck = true;
-			if (!token.startsWith("\\")) {
-				Main.LOGGER.trace("not a mod");
+			if (!token.startsWith("\\") || token.length() <= 1)
 				doModCheck = false;
-			} else if (token.length() <= 1) {
-				Main.LOGGER.trace("too short");
-				doModCheck = false;
-			}
 			if (doModCheck) {
 				char modChar = token.charAt(1);
-				Main.LOGGER.trace("modChar=" + modChar);
 				TextboxModifier.ModType modType = null;
 				switch (modChar) {
 				case 'd':
@@ -141,7 +129,6 @@ public class TextboxUtil {
 					modType = TextboxModifier.ModType.FACE;
 					break;
 				}
-				Main.LOGGER.trace("modType=" + modType);
 				if (modType != null) {
 					TextboxModifier mod = new TextboxModifier();
 					mod.type = modType;
@@ -190,8 +177,6 @@ public class TextboxUtil {
 						if (pos < 0)
 							pos = 0;
 					}
-					Main.LOGGER.trace("mod position in unstripped string is " + mod.position);
-					Main.LOGGER.trace("mod has been put at position " + pos);
 					if (ret.mods.containsKey(pos))
 						ret.mods.get(pos).add(mod);
 					else {
@@ -203,8 +188,6 @@ public class TextboxUtil {
 						pos = pos2;
 				}
 			}
-			Main.LOGGER.trace("strippedToken=" + token);
-			Main.LOGGER.trace("pos=" + pos + ",posDelta=" + posDelta);
 			pos += realLength;
 			pos -= posDelta;
 			posDelta = 0;
