@@ -301,7 +301,7 @@ public class Main {
 	public static void resourceError(Throwable e) {
 		if (e != null)
 			LOGGER.error("Error while loading resources!", e);
-		JOptionPane.showMessageDialog(null, "Could not load resources!\nPlease report this error here:\n" + ISSUES_SITE,
+		JOptionPane.showMessageDialog(null, "Could not load resources:" + e + "\nPlease report this error here:\n" + ISSUES_SITE,
 				"Could not load resources!", JOptionPane.ERROR_MESSAGE);
 		System.exit(1);
 	}

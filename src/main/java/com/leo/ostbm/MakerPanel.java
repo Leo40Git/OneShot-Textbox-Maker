@@ -1050,62 +1050,53 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				if (!Resources.FACE_BLANK.equals(panel.faceSelect.getSelectedItem()))
 					maxLen -= 10;
 				TextboxParseData tpd = parseTextbox(getText());
-				if (tpd.strippedText.isEmpty()) {
-					if (tpd.mods.containsKey(0)) {
-						List<TextboxModifier> list = tpd.mods.get(0);
-						for (TextboxModifier mod : list) {
-							stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
-						}
-					}
-				} else {
-					String[] lines = tpd.strippedText.split("\n");
-					int currentChar = 0, length = 0, ignoreOff = 0;
-					for (int i = 0; i < lines.length; i++) {
-						char[] chars = lines[i].toCharArray();
-						for (int j = 0; j < chars.length; j++) {
-							if (tpd.mods.containsKey(currentChar)) {
-								List<TextboxModifier> list = tpd.mods.get(currentChar);
-								for (TextboxModifier mod : list) {
-									if (mod.type == TextboxModifier.ModType.FACE)
-										if (mod.args.length == 0)
-											maxLen = 57;
-										else if (Resources.FACE_BLANK.equals(mod.args[0]))
-											maxLen = 57;
-										else
-											maxLen = 47;
-									else if (mod.type == TextboxModifier.ModType.COLOR) {
-										Color col = getColorModValue(mod, StyleConstants.getForeground(styleNormal));
-										SimpleAttributeSet colorStyle = colorStyleCache.get(col);
-										if (colorStyle == null) {
-											colorStyle = new SimpleAttributeSet();
-											Font font = Resources.getTextboxFont();
-											StyleConstants.setFontFamily(colorStyle, font.getFamily());
-											StyleConstants.setFontSize(colorStyle, font.getSize());
-											StyleConstants.setForeground(colorStyle, col);
-											StyleConstants.setBold(colorStyle, font.isBold());
-											colorStyleCache.put(col, colorStyle);
-										}
-										curStyle = colorStyle;
+				String[] lines = tpd.strippedText.split("\n");
+				int currentChar = 0, length = 0, ignoreOff = 0;
+				for (int i = 0; i < lines.length; i++) {
+					char[] chars = lines[i].toCharArray();
+					for (int j = 0; j < chars.length + 1; j++) {
+						if (tpd.mods.containsKey(currentChar)) {
+							List<TextboxModifier> list = tpd.mods.get(currentChar);
+							for (TextboxModifier mod : list) {
+								if (mod.type == TextboxModifier.ModType.FACE)
+									if (mod.args.length == 0)
+										maxLen = 57;
+									else if (Resources.FACE_BLANK.equals(mod.args[0]))
+										maxLen = 57;
+									else
+										maxLen = 47;
+								else if (mod.type == TextboxModifier.ModType.COLOR) {
+									Color col = getColorModValue(mod, StyleConstants.getForeground(styleNormal));
+									SimpleAttributeSet colorStyle = colorStyleCache.get(col);
+									if (colorStyle == null) {
+										colorStyle = new SimpleAttributeSet();
+										Font font = Resources.getTextboxFont();
+										StyleConstants.setFontFamily(colorStyle, font.getFamily());
+										StyleConstants.setFontSize(colorStyle, font.getSize());
+										StyleConstants.setForeground(colorStyle, col);
+										StyleConstants.setBold(colorStyle, font.isBold());
+										colorStyleCache.put(col, colorStyle);
 									}
-									stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
-									ignoreOff += mod.length;
+									curStyle = colorStyle;
 								}
+								stylDoc.setCharacterAttributes(mod.position, mod.length, styleMod, true);
+								ignoreOff += mod.length;
 							}
-							stylDoc.setCharacterAttributes(currentChar + ignoreOff, 1, curStyle, true);
-							length++;
-							currentChar++;
 						}
-						int start = 0, end = 0;
-						Element line = doc.getDefaultRootElement().getElement(i);
-						start = line.getStartOffset();
-						end = line.getEndOffset();
-						if (i > 3) {
-							stylDoc.setParagraphAttributes(start, end - start, styleOver, true);
-							stylDoc.setCharacterAttributes(start, end - start, styleOver, true);
-						} else if (length > maxLen) {
-							final int pos = start + ignoreOff + maxLen;
-							stylDoc.setCharacterAttributes(pos, end - pos, styleOver, true);
-						}
+						stylDoc.setCharacterAttributes(currentChar + ignoreOff, 1, curStyle, true);
+						length++;
+						currentChar++;
+					}
+					int start = 0, end = 0;
+					Element line = doc.getDefaultRootElement().getElement(i);
+					start = line.getStartOffset();
+					end = line.getEndOffset();
+					if (i > 3) {
+						stylDoc.setParagraphAttributes(start, end - start, styleOver, true);
+						stylDoc.setCharacterAttributes(start, end - start, styleOver, true);
+					} else if (length > maxLen) {
+						final int pos = start + ignoreOff + maxLen;
+						stylDoc.setCharacterAttributes(pos, end - pos, styleOver, true);
 					}
 				}
 			}
