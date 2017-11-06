@@ -39,11 +39,11 @@ public class Resources {
 		}
 
 		private void makeIcon() {
-			final int smolWidth = image.getWidth() / 2, smolHeight = image.getHeight() / 2;
-			BufferedImage imageSmol = new BufferedImage(smolWidth, smolHeight, BufferedImage.TYPE_4BYTE_ABGR);
+			final int smolSize = 48;
+			BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
 			Graphics g = imageSmol.getGraphics();
-			g.drawImage(image, 0, 0, smolWidth, smolHeight, null);
-			icon = new ImageIcon(imageSmol, "icon for face " + name);
+			g.drawImage(image, 0, 0, smolSize, smolSize, null);
+			icon = new ImageIcon(imageSmol, "small icon for face " + name);
 		}
 
 		public String getName() {
@@ -209,8 +209,9 @@ public class Resources {
 	}
 
 	public static String addFace(String name, File file, BufferedImage face) {
-		if (face.getWidth() != 96 || face.getHeight() != 96)
-			throw new IllegalArgumentException("Face dimensions must be 96 by 96!");
+		final int width = face.getWidth(), height = face.getHeight();
+		if ((width == 96 && height == 96) || (width == 48 && height == 48))
+			throw new IllegalArgumentException("Face dimensions must be 96 by 96 or 48 by 48!");
 		String origName = name;
 		int nameCount = 1;
 		while (faces.containsKey(name)) {
