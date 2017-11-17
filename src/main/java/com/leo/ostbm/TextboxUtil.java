@@ -335,14 +335,27 @@ public class TextboxUtil {
 		List<BufferedImage> ret = new ArrayList<>();
 		for (int i = 0; i < boxes.size(); i++) {
 			Textbox box = boxes.get(i);
-			// add a blank textbox frame
-			ret.add(drawTextbox(box.face, "", false));
 			TextboxParseData tpd = parseTextbox(box.text);
 			TextboxParseData tpd2 = new TextboxParseData();
 			tpd2.strippedText = "";
 			tpd2.mods = tpd.mods;
 			String text = tpd.strippedText;
 			String face = box.face;
+			boolean instant = false;
+			if (tpd.mods.containsKey(0)) {
+				List<TextboxModifier> mods = tpd.mods.get(0);
+				if (mods.get(0).type == TextboxModifier.ModType.INTERRUPT)
+					instant = true;
+			}
+			boolean endsWithInterrupt = false;
+			if (tpd.mods.containsKey(text.length())) {
+				List<TextboxModifier> mods = tpd.mods.get(text.length());
+				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INTERRUPT)
+					endsWithInterrupt = true;
+			}
+			if (!instant)
+				// add a blank textbox frame
+				ret.add(drawTextbox(box.face, "", false));
 			for (int l = 0; l < text.length() - 1; l++) {
 				int delay = 1;
 				if (tpd.mods.containsKey(l)) {
@@ -373,17 +386,16 @@ public class TextboxUtil {
 						}
 					}
 				}
-				char c = text.charAt(l);
-				tpd2.strippedText += c;
-				for (int d = 0; d < delay; d++)
-					ret.add(drawTextbox(face, tpd2, false));
+				if (!instant) {
+					char c = text.charAt(l);
+					tpd2.strippedText += c;
+					for (int d = 0; d < delay; d++)
+						ret.add(drawTextbox(face, tpd2, false));
+				}
 				delay = 1;
 			}
-			boolean endsWithInterrupt = false;
-			if (tpd.mods.containsKey(text.length())) {
-				List<TextboxModifier> mods = tpd.mods.get(text.length());
-				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INTERRUPT)
-					endsWithInterrupt = true;
+			if (instant) {
+				ret.add(drawTextbox(face, tpd, false));
 			}
 			if (!endsWithInterrupt) {
 				if (i == boxes.size() - 1) {

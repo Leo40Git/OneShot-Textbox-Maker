@@ -753,6 +753,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		Vector<String[]> errors = new Vector<>();
 		for (int i = 0; i < boxes.size(); i++) {
 			Textbox b = boxes.get(i);
+			if (Resources.getFace(b.face) == null)
+				b.face = Resources.FACE_BLANK;
 			TextboxParseData tpd = parseTextbox(b.text);
 			String text = tpd.strippedText;
 			String[] lines = text.split("\n");
@@ -763,17 +765,17 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				break;
 			}
 			int maxLen = 47;
-			String errorBit = "with face";
+			String errorBit = "with";
 			if (Resources.FACE_BLANK.equals(b.face)) {
 				maxLen += 10;
-				errorBit = "without face";
+				errorBit += "out";
 			}
 			for (int l = 0; l < lines.length; l++) {
 				int lineLen = lines[l].length();
 				if (lineLen > maxLen) {
 					errors.add(new String[] { Integer.toString(i + 1), Integer.toString(l + 1),
 							"Line too long: has " + lineLen + " characters, but textboxes " + errorBit
-									+ " can only fit " + maxLen + " characters" });
+									+ " faces can only fit " + maxLen + " characters" });
 					break;
 				}
 			}

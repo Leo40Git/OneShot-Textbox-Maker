@@ -210,7 +210,7 @@ public class Resources {
 
 	public static String addFace(String name, File file, BufferedImage face) {
 		final int width = face.getWidth(), height = face.getHeight();
-		if ((width == 96 && height == 96) || (width == 48 && height == 48))
+		if ((width != 96 || height != 96) && (width != 48 || height != 48))
 			throw new IllegalArgumentException("Face dimensions must be 96 by 96 or 48 by 48!");
 		String origName = name;
 		int nameCount = 1;
