@@ -6,13 +6,13 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import com.leo.ostbm.Resources.Facepic;
-import com.leo.ostbm.util.UnmodifiableMapWrapper;
 
 public class TextboxUtil {
 
@@ -259,8 +259,8 @@ public class TextboxUtil {
 		cnames.put(6, "cyan");
 		colors.put(7, new Color(128, 128, 128));
 		cnames.put(7, "gray");
-		TEXTBOX_PRESET_COLORS = new UnmodifiableMapWrapper<>(colors);
-		TEXTBOX_PRESET_COLOR_NAMES = new UnmodifiableMapWrapper<>(cnames);
+		TEXTBOX_PRESET_COLORS = Collections.unmodifiableMap(colors);
+		TEXTBOX_PRESET_COLOR_NAMES = Collections.unmodifiableMap(cnames);
 	}
 
 	public static Color getColorModValue(TextboxModifier mod, Color defaultColor) {
