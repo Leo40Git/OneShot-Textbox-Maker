@@ -13,6 +13,7 @@ public class Config {
 	public static final String KEY_CONFIG_BUILD = "config_build";
 	public static final String KEY_SKIP_UPDATE_CHECK = "skip_update_check";
 	public static final String KEY_HIDE_SOLSTICE_FACES = "hide_solstice_faces";
+	public static final String KEY_COPY_FACEPICS = "copy_facepics";
 
 	private static Preferences config;
 

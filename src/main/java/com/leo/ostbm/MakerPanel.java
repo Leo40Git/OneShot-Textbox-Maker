@@ -113,6 +113,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public static final String A_FACE_FOLDER = "faceFolder";
 	public static final String A_CUSTOM_FACE = "customFace";
 	public static final String A_ADD_BOX = "addBox";
+	public static final String A_CLONE_BOX = "cloneBox";
 	public static final String A_INSERT_BOX_BEFORE = "insertBoxBefore";
 	public static final String A_INSERT_BOX_AFTER = "insertBoxAfter";
 	public static final String A_MOVE_BOX_UP = "moveBoxUp";
@@ -127,8 +128,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	private List<Textbox> boxes;
 
 	private JList<Textbox> boxSelect;
-	private JButton addBoxButton, insertBoxBeforeButton, insertBoxAfterButton, moveBoxUpButton, moveBoxDownButton,
-			removeBoxButton;
+	private JButton addBoxButton, cloneBoxButton, insertBoxBeforeButton, insertBoxAfterButton, moveBoxUpButton,
+			moveBoxDownButton, removeBoxButton;
 
 	private JComboBox<String> faceSelect;
 	private DefaultComboBoxModel<String> faceSelectModel;
@@ -154,12 +155,17 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		JPanel boxSelectPanel = new JPanel();
 		boxSelectPanel.setLayout(new BorderLayout());
 		JPanel boxControlPanel = new JPanel();
-		boxControlPanel.setLayout(new GridLayout(1, 6));
+		boxControlPanel.setLayout(new GridLayout(1, 7));
 		addBoxButton = new JButton(Resources.getIcon(Icon.ADD_TEXTBOX));
 		addBoxButton.addActionListener(this);
 		addBoxButton.setActionCommand(A_ADD_BOX);
 		addBoxButton.setToolTipText("Add a new textbox");
 		boxControlPanel.add(addBoxButton);
+		cloneBoxButton = new JButton(Resources.getIcon(Icon.CLONE_TEXTBOX));
+		cloneBoxButton.addActionListener(this);
+		cloneBoxButton.setActionCommand(A_CLONE_BOX);
+		cloneBoxButton.setToolTipText("Clone the currently selected textbox");
+		boxControlPanel.add(cloneBoxButton);
 		insertBoxBeforeButton = new JButton(Resources.getIcon(Icon.INSERT_TEXTBOX_BEFORE));
 		insertBoxBeforeButton.addActionListener(this);
 		insertBoxBeforeButton.setActionCommand(A_INSERT_BOX_BEFORE);
@@ -439,6 +445,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		JDialog previewFrame;
 		int extraHeight, maxHeight;
 		Dimension size;
+		boolean cloneFacepics = Config.getBoolean(Config.KEY_COPY_FACEPICS, true);
 		switch (a) {
 		case A_FACE_FOLDER:
 			if (!Desktop.isDesktopSupported())
@@ -485,8 +492,17 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			updateCurrentBox();
 			copyBox = boxes.get(boxes.size() - 1);
 			box = new Textbox();
-			box.face = copyBox.face;
+			if (cloneFacepics)
+				box.face = copyBox.face;
 			boxes.add(box);
+			currentBox = boxes.size() - 1;
+			updateBoxComponents();
+			updateBoxList();
+			break;
+		case A_CLONE_BOX:
+			updateCurrentBox();
+			box = new Textbox(boxes.get(currentBox));
+			boxes.add(currentBox, box);
 			currentBox = boxes.size() - 1;
 			updateBoxComponents();
 			updateBoxList();
@@ -495,7 +511,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			updateCurrentBox();
 			copyBox = boxes.get(currentBox);
 			box = new Textbox();
-			box.face = copyBox.face;
+			if (cloneFacepics)
+				box.face = copyBox.face;
 			boxes.add(currentBox, box);
 			updateBoxComponents();
 			updateBoxList();
@@ -504,7 +521,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			updateCurrentBox();
 			copyBox = boxes.get(currentBox);
 			box = new Textbox();
-			box.face = copyBox.face;
+			if (cloneFacepics)
+				box.face = copyBox.face;
 			boxes.add(++currentBox, box);
 			updateBoxComponents();
 			updateBoxList();

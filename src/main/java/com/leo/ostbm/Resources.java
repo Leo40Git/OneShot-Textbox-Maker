@@ -86,7 +86,8 @@ public class Resources {
 		INSERT_TEXTBOX_AFTER("Insert Textbox After"),
 		MOVE_TEXTBOX_UP("Move Textbox Up"),
 		MOVE_TEXTBOX_DOWN("Move Textbox Down"),
-		SETTINGS("Settings");
+		SETTINGS("Settings"),
+		CLONE_TEXTBOX("Clone Textbox");
 
 		String description;
 

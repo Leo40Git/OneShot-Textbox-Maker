@@ -24,6 +24,10 @@ public class TextboxUtil {
 			this.face = face;
 			this.text = text;
 		}
+		
+		public Textbox(Textbox other) {
+			this(other.face, other.text);
+		}
 
 		public Textbox(String text) {
 			this(Resources.FACE_BLANK, text);
@@ -51,25 +55,42 @@ public class TextboxUtil {
 	public static class TextboxModifier {
 
 		public enum ModType {
-			FACE(0, 1), COLOR(0, 1, 3), DELAY(1), INTERRUPT;
-
+			FACE('@', 0, 1), COLOR('c', 0, 1, 3), DELAY('d', 1), INSTANT_INTERRUPT('i');
+			
+			private char modChar;
 			private int[] argNums;
 
-			ModType() {
+			ModType(char modChar) {
+				this.modChar = modChar;
 				argNums = new int[] { 0 };
 			}
 
-			ModType(int argNum) {
+			ModType(char modChar, int argNum) {
+				this.modChar = modChar;
 				argNums = new int[] { argNum };
 			}
 
-			ModType(int... argNums) {
+			ModType(char modChar, int... argNums) {
+				this.modChar = modChar;
 				this.argNums = argNums;
+			}
+			
+			public char getModChar() {
+				return modChar;
 			}
 
 			public int[] getArgumentNumbers() {
 				return argNums;
 			}
+		}
+		
+		public static final Map<Character, ModType> MOD_CHARS;
+		
+		static {
+			Map<Character, ModType> mc = new HashMap<>();
+			for (ModType type : ModType.values())
+				mc.put(type.getModChar(), type);
+			MOD_CHARS = Collections.unmodifiableMap(mc);
 		}
 
 		public ModType type;
@@ -115,31 +136,19 @@ public class TextboxUtil {
 			if (doModCheck) {
 				char modChar = token.charAt(1);
 				TextboxModifier.ModType modType = null;
-				switch (modChar) {
-				case 'd':
-					modType = TextboxModifier.ModType.DELAY;
-					break;
-				case 'c':
-					modType = TextboxModifier.ModType.COLOR;
-					break;
-				case 'i':
-					modType = TextboxModifier.ModType.INTERRUPT;
-					break;
-				case '@':
-					modType = TextboxModifier.ModType.FACE;
-					break;
-				}
+				if (TextboxModifier.MOD_CHARS.containsKey(modChar))
+					modType = TextboxModifier.MOD_CHARS.get(modChar);
 				if (modType != null) {
 					TextboxModifier mod = new TextboxModifier();
 					mod.type = modType;
-					int[] argns = modType.getArgumentNumbers();
+					int[] argNums = modType.getArgumentNumbers();
 					String[] args = new String[10];
-					boolean noArgsPossible = Arrays.binarySearch(argns, 0) >= 0;
-					boolean noArgs = noArgsPossible && argns.length == 1;
-					char third = 0;
+					boolean noArgsPossible = Arrays.binarySearch(argNums, 0) > -1;
+					boolean noArgs = noArgsPossible && argNums.length == 1;
+					char thirdChar = 0;
 					if (token.length() > 2)
-						third = token.charAt(2);
-					if (!noArgs && (third != '[' || token.indexOf(']') == -1)) {
+						thirdChar = token.charAt(2);
+					if (!noArgs && (thirdChar != '[' || token.indexOf(']') == -1)) {
 						if (noArgsPossible)
 							noArgs = true;
 						else {
@@ -158,7 +167,7 @@ public class TextboxUtil {
 						posDelta = token.indexOf(']') + 1;
 						token = token.substring(token.indexOf(']') + 1);
 						String[] argStrs = argStr.split(",");
-						if (Arrays.binarySearch(argns, argStrs.length) >= 0) {
+						if (Arrays.binarySearch(argNums, argStrs.length) > -1) {
 							args = new String[argStrs.length];
 							for (int i = 0; i < args.length; i++)
 								args[i] = argStrs[i];
@@ -168,13 +177,6 @@ public class TextboxUtil {
 						}
 					}
 					mod.position = realPos;
-					int pos2 = pos;
-					if (mod.type == TextboxModifier.ModType.DELAY) {
-						mod.length++;
-						pos--;
-						if (pos < 0)
-							pos = 0;
-					}
 					if (ret.mods.containsKey(pos))
 						ret.mods.get(pos).add(mod);
 					else {
@@ -182,8 +184,6 @@ public class TextboxUtil {
 						modList.add(mod);
 						ret.mods.put(pos, modList);
 					}
-					if (mod.type == TextboxModifier.ModType.DELAY)
-						pos = pos2;
 				}
 			}
 			pos += realLength;
@@ -344,13 +344,13 @@ public class TextboxUtil {
 			boolean instant = false;
 			if (tpd.mods.containsKey(0)) {
 				List<TextboxModifier> mods = tpd.mods.get(0);
-				if (mods.get(0).type == TextboxModifier.ModType.INTERRUPT)
+				if (mods.get(0).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
 					instant = true;
 			}
 			boolean endsWithInterrupt = false;
 			if (tpd.mods.containsKey(text.length())) {
 				List<TextboxModifier> mods = tpd.mods.get(text.length());
-				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INTERRUPT)
+				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
 					endsWithInterrupt = true;
 			}
 			if (!instant)
@@ -358,10 +358,26 @@ public class TextboxUtil {
 				ret.add(drawTextbox(box.face, "", false));
 			for (int l = 0; l < text.length() - 1; l++) {
 				int delay = 1;
+				if (tpd.mods.containsKey(l + 1)) {
+					List<TextboxModifier> mods = tpd.mods.get(l + 1);
+					for (TextboxModifier mod : mods) {
+						if (mod.type == TextboxModifier.ModType.DELAY) {
+							Integer newDelay = delay;
+							try {
+								newDelay = Integer.parseInt(mod.args[0]);
+							} catch (NumberFormatException e) {
+								Main.LOGGER.error("Error while parsing delay!", e);
+								newDelay = delay;
+							}
+							delay = newDelay;
+						}
+					}
+				}
 				if (tpd.mods.containsKey(l)) {
 					List<TextboxModifier> mods = tpd.mods.get(l);
 					for (TextboxModifier mod : mods) {
 						switch (mod.type) {
+						/*
 						case DELAY:
 							Integer newDelay = delay;
 							try {
@@ -372,6 +388,7 @@ public class TextboxUtil {
 							}
 							delay = newDelay;
 							break;
+						*/
 						case FACE:
 							if (mod.args.length == 0) {
 								face = Resources.FACE_BLANK;

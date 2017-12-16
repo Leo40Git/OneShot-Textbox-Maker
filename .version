@@ -1,4 +1,8 @@
-1.6.1
+1.6.2
+Hotfix 1.6.2:
+- Fix some delay-related modifier highlighting screw-ups
+- Added "clone textbox" option
+- Added option to enable/disable copying facepic from current textbox when creating new textbox
 Hotfix 1.6.1:
 - Fixed magpie_shock facepic not having Magpie's signature Facepic Background (TM).
 1.6: The Animated Update

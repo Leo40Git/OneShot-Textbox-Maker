@@ -14,8 +14,23 @@ public class SettingsPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	
-	public SettingsPanel() {
-		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+	private void initGeneralPanel() {
+		JPanel generalPanel = new JPanel();
+		generalPanel.setLayout(new BoxLayout(generalPanel, BoxLayout.PAGE_AXIS));
+		generalPanel.setBorder(BorderFactory.createTitledBorder("General"));
+		JCheckBox generalCloneFace = new JCheckBox("Copy facepic from currently selected when creating new textbox",
+				Config.getBoolean(Config.KEY_COPY_FACEPICS, true));
+		generalCloneFace.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Config.setBoolean(Config.KEY_COPY_FACEPICS, generalCloneFace.isSelected());
+			}
+		});
+		generalPanel.add(generalCloneFace);
+		add(generalPanel);
+	}
+	
+	private void initSpoilerPanel() {
 		JPanel spoilerPanel = new JPanel();
 		spoilerPanel.setLayout(new BoxLayout(spoilerPanel, BoxLayout.PAGE_AXIS));
 		spoilerPanel.setBorder(BorderFactory.createTitledBorder("Spoilers"));
@@ -39,6 +54,13 @@ public class SettingsPanel extends JPanel {
 		});
 		spoilerPanel.add(solsticeFacepics);
 		add(spoilerPanel);
+	}
+
+	public SettingsPanel() {
+		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		initGeneralPanel();
+		initSpoilerPanel();
 	}
 
 }
