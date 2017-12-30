@@ -1,4 +1,4 @@
-# OneShot-Textbox-Maker
+# OneShot-Textbox-Maker [![Build Status](https://travis-ci.org/Leo40Git/OneShot-Textbox-Maker.svg?branch=master)](https://travis-ci.org/Leo40Git/OneShot-Textbox-Maker)
 Makes OneShot textboxes. What did you expect?  
 **WARNING!** This application contains spoilers for Solstice (if you count faces as spoilers)!
 # Licenses & Credits
