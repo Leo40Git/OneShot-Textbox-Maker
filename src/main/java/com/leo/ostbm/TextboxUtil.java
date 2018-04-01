@@ -24,7 +24,7 @@ public class TextboxUtil {
 			this.face = face;
 			this.text = text;
 		}
-		
+
 		public Textbox(Textbox other) {
 			this(other.face, other.text);
 		}
@@ -55,8 +55,8 @@ public class TextboxUtil {
 	public static class TextboxModifier {
 
 		public enum ModType {
-			FACE('@', 0, 1), COLOR('c', 0, 1, 3), DELAY('d', 1), INSTANT_INTERRUPT('i');
-			
+			FACE('@', 0, 1), COLOR('c', 0, 1, 3), DELAY('d', 1), INSTANT_INTERRUPT('i'), SPEED('s', 1);
+
 			private char modChar;
 			private int[] argNums;
 
@@ -74,7 +74,7 @@ public class TextboxUtil {
 				this.modChar = modChar;
 				this.argNums = argNums;
 			}
-			
+
 			public char getModChar() {
 				return modChar;
 			}
@@ -83,13 +83,16 @@ public class TextboxUtil {
 				return argNums;
 			}
 		}
-		
+
 		public static final Map<Character, ModType> MOD_CHARS;
-		
+
 		static {
 			Map<Character, ModType> mc = new HashMap<>();
-			for (ModType type : ModType.values())
+			for (ModType type : ModType.values()) {
+				if (mc.containsKey(type.getModChar()))
+					throw new RuntimeException("Duplicate mod character key!");
 				mc.put(type.getModChar(), type);
+			}
 			MOD_CHARS = Collections.unmodifiableMap(mc);
 		}
 
@@ -99,21 +102,23 @@ public class TextboxUtil {
 		public int position;
 	}
 
-	public static class TextboxParseData {
+	public static class ParsedTextbox {
 		public String strippedText;
 		public Map<Integer, List<TextboxModifier>> mods;
 
-		public TextboxParseData() {
+		public ParsedTextbox() {
 			mods = new HashMap<>();
 		}
 	}
 
-	private static final Map<String, TextboxParseData> tpdCache = new HashMap<>();
+	private static final Map<Integer, ParsedTextbox> tpdCache = new HashMap<>();
 
-	public static TextboxParseData parseTextbox(String text) {
-		if (tpdCache.containsKey(text))
-			return tpdCache.get(text);
-		TextboxParseData ret = new TextboxParseData();
+	public static ParsedTextbox parseTextbox(String text) {
+		if (text == null)
+			return null;
+		if (tpdCache.containsKey(text.hashCode()))
+			return tpdCache.get(text.hashCode());
+		ParsedTextbox ret = new ParsedTextbox();
 		StringBuilder strippedBuilder = new StringBuilder();
 		List<String> tokenList = new ArrayList<>();
 		StringBuilder tokenBuilder = new StringBuilder();
@@ -193,7 +198,7 @@ public class TextboxUtil {
 			strippedBuilder.append(token);
 		}
 		ret.strippedText = strippedBuilder.toString();
-		tpdCache.put(text, ret);
+		tpdCache.put(text.hashCode(), ret);
 		return ret;
 	}
 
@@ -201,7 +206,7 @@ public class TextboxUtil {
 		return drawTextbox(face, parseTextbox(text), drawArrow, arrowOffset);
 	}
 
-	public static BufferedImage drawTextbox(String face, TextboxParseData tpd, boolean drawArrow, int arrowOffset) {
+	public static BufferedImage drawTextbox(String face, ParsedTextbox tpd, boolean drawArrow, int arrowOffset) {
 		BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = ret.getGraphics();
 		drawTextbox(g, face, tpd, 0, 0, drawArrow, arrowOffset);
@@ -212,7 +217,7 @@ public class TextboxUtil {
 		return drawTextbox(face, text, drawArrow, 0);
 	}
 
-	public static BufferedImage drawTextbox(String face, TextboxParseData tpd, boolean drawArrow) {
+	public static BufferedImage drawTextbox(String face, ParsedTextbox tpd, boolean drawArrow) {
 		return drawTextbox(face, tpd, drawArrow, 0);
 	}
 
@@ -221,7 +226,7 @@ public class TextboxUtil {
 		drawTextbox(g, face, parseTextbox(text), x, y, drawArrow, arrowOffset);
 	}
 
-	public static void drawTextbox(Graphics g, String face, TextboxParseData tpd, int x, int y, boolean drawArrow,
+	public static void drawTextbox(Graphics g, String face, ParsedTextbox tpd, int x, int y, boolean drawArrow,
 			int arrowOffset) {
 		g.drawImage(Resources.getTextboxImage(), x, y, null);
 		Facepic faceObj = Resources.getFace(face);
@@ -302,7 +307,7 @@ public class TextboxUtil {
 		return retColor;
 	}
 
-	private static void drawTextboxString(Graphics g, TextboxParseData tpd, int x, int y) {
+	private static void drawTextboxString(Graphics g, ParsedTextbox tpd, int x, int y) {
 		g.setFont(Resources.getTextboxFont());
 		final int startX = x;
 		final Color defaultCol = g.getColor();
@@ -335,17 +340,48 @@ public class TextboxUtil {
 		List<BufferedImage> ret = new ArrayList<>();
 		for (int i = 0; i < boxes.size(); i++) {
 			Textbox box = boxes.get(i);
-			TextboxParseData tpd = parseTextbox(box.text);
-			TextboxParseData tpd2 = new TextboxParseData();
+			ParsedTextbox tpd = parseTextbox(box.text);
+			ParsedTextbox tpd2 = new ParsedTextbox();
 			tpd2.strippedText = "";
 			tpd2.mods = tpd.mods;
 			String text = tpd.strippedText;
 			String face = box.face;
 			boolean instant = false;
+			int speed = 1;
+			int delay = speed;
 			if (tpd.mods.containsKey(0)) {
 				List<TextboxModifier> mods = tpd.mods.get(0);
 				if (mods.get(0).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
 					instant = true;
+				for (int j = (instant ? 1 : 0); j < mods.size(); j++) {
+					TextboxModifier mod = mods.get(j);
+					switch (mod.type) {
+					case DELAY:
+						Integer newDelay = delay;
+						try {
+							newDelay = Integer.parseInt(mod.args[0]);
+							newDelay = Math.max(0, newDelay);
+						} catch (NumberFormatException e) {
+							Main.LOGGER.error("Error while parsing delay!", e);
+							newDelay = delay;
+						}
+						delay = newDelay + speed;
+						break;
+					case SPEED:
+						Integer newSpeed = speed;
+						try {
+							newSpeed = Integer.parseInt(mod.args[0]);
+							newSpeed = Math.max(1, newSpeed);
+						} catch (NumberFormatException e) {
+							Main.LOGGER.error("Error while parsing speed!", e);
+							newSpeed = speed;
+						}
+						speed = newSpeed;
+						break;
+					default:
+						break;
+					}
+				}
 			}
 			boolean endsWithInterrupt = false;
 			if (tpd.mods.containsKey(text.length())) {
@@ -353,66 +389,69 @@ public class TextboxUtil {
 				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
 					endsWithInterrupt = true;
 			}
-			if (!instant)
+			if (instant)
+				ret.add(drawTextbox(face, tpd, false));
+			else {
 				// add a blank textbox frame
-				ret.add(drawTextbox(box.face, "", false));
-			for (int l = 0; l < text.length() - 1; l++) {
-				int delay = 1;
-				if (tpd.mods.containsKey(l + 1)) {
-					List<TextboxModifier> mods = tpd.mods.get(l + 1);
-					for (TextboxModifier mod : mods) {
-						if (mod.type == TextboxModifier.ModType.DELAY) {
-							Integer newDelay = delay;
-							try {
-								newDelay = Integer.parseInt(mod.args[0]);
-							} catch (NumberFormatException e) {
-								Main.LOGGER.error("Error while parsing delay!", e);
-								newDelay = delay;
-							}
-							delay = newDelay;
-						}
-					}
-				}
-				if (tpd.mods.containsKey(l)) {
-					List<TextboxModifier> mods = tpd.mods.get(l);
-					for (TextboxModifier mod : mods) {
-						switch (mod.type) {
-						/*
-						case DELAY:
-							Integer newDelay = delay;
-							try {
-								newDelay = Integer.parseInt(mod.args[0]);
-							} catch (NumberFormatException e) {
-								Main.LOGGER.error("Error while parsing delay!", e);
-								newDelay = delay;
-							}
-							delay = newDelay;
-							break;
-						*/
-						case FACE:
-							if (mod.args.length == 0) {
-								face = Resources.FACE_BLANK;
+				for (int d = 0; d < delay; d++)
+					ret.add(drawTextbox(box.face, "", false));
+				for (int l = 0; l < text.length() - 1; l++) {
+					delay = speed;
+					if (tpd.mods.containsKey(l + 1)) {
+						List<TextboxModifier> mods = tpd.mods.get(l + 1);
+						for (TextboxModifier mod : mods) {
+							switch (mod.type) {
+							case DELAY:
+								Integer newDelay = delay;
+								try {
+									newDelay = Integer.parseInt(mod.args[0]);
+									newDelay = Math.max(0, newDelay);
+								} catch (NumberFormatException e) {
+									Main.LOGGER.error("Error while parsing delay!", e);
+									newDelay = delay;
+								}
+								delay = newDelay + speed;
+								break;
+							case SPEED:
+								Integer newSpeed = speed;
+								try {
+									newSpeed = Integer.parseInt(mod.args[0]);
+									newSpeed = Math.max(1, newSpeed);
+								} catch (NumberFormatException e) {
+									Main.LOGGER.error("Error while parsing speed!", e);
+									newSpeed = speed;
+								}
+								speed = newSpeed;
+								break;
+							default:
 								break;
 							}
-							String newFace = mod.args[0];
-							if (Resources.getFace(newFace) != null)
-								face = newFace;
-							break;
-						default:
-							break;
 						}
 					}
-				}
-				if (!instant) {
+					if (tpd.mods.containsKey(l)) {
+						List<TextboxModifier> mods = tpd.mods.get(l);
+						for (TextboxModifier mod : mods) {
+							switch (mod.type) {
+							case FACE:
+								if (mod.args.length == 0) {
+									face = Resources.FACE_BLANK;
+									break;
+								}
+								String newFace = mod.args[0];
+								if (Resources.getFace(newFace) != null)
+									face = newFace;
+								break;
+							default:
+								break;
+							}
+						}
+					}
 					char c = text.charAt(l);
 					tpd2.strippedText += c;
 					for (int d = 0; d < delay; d++)
 						ret.add(drawTextbox(face, tpd2, false));
+					delay = speed;
 				}
-				delay = 1;
-			}
-			if (instant) {
-				ret.add(drawTextbox(face, tpd, false));
 			}
 			if (!endsWithInterrupt) {
 				if (i == boxes.size() - 1) {

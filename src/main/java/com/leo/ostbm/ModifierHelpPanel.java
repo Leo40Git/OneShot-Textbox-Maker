@@ -3,18 +3,31 @@ package com.leo.ostbm;
 import java.awt.Color;
 import java.util.Map;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
-import javax.swing.UIManager;
 
 public class ModifierHelpPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
+	public static String colorToHTML(Color color) {
+		String redStr = Integer.toHexString(color.getRed());
+		if (redStr.length() == 1)
+			redStr = "0" + redStr;
+		String greenStr = Integer.toHexString(color.getGreen());
+		if (greenStr.length() == 1)
+			greenStr = "0" + greenStr;
+		String blueStr = Integer.toHexString(color.getBlue());
+		if (blueStr.length() == 1)
+			blueStr = "0" + blueStr;
+		return "#" + redStr + greenStr + blueStr;
+	}
+
 	public ModifierHelpPanel() {
-		setBorder(UIManager.getBorder("TitledBorder.border"));
+		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		add(new JLabel(
 				"<html>Modifiers are formatted like so:<br /><code>\\m[parameters]</code><br />If a modifier does not need any parameters, the square brackets can be omitted.</html>"));
@@ -24,20 +37,7 @@ public class ModifierHelpPanel extends JPanel {
 
 		for (Map.Entry<Integer, Color> entry : TextboxUtil.TEXTBOX_PRESET_COLORS.entrySet()) {
 			String presets = "<html><p style=\"color:";
-			Color color = entry.getValue();
-			String redStr = Integer.toHexString(color.getRed());
-			if (redStr.length() == 1)
-				redStr = "0" + redStr;
-			String greenStr = Integer.toHexString(color.getGreen());
-			if (greenStr.length() == 1)
-				greenStr = "0" + greenStr;
-			String blueStr = Integer.toHexString(color.getBlue());
-			if (blueStr.length() == 1)
-				blueStr = "0" + blueStr;
-			String colorStr = "#" + redStr + greenStr + blueStr;
-			presets += colorStr + ";";
-			if (entry.getKey() == 0 || entry.getKey() == 3 || entry.getKey() == 6)
-				presets += "background-color:black;";
+			presets += colorToHTML(entry.getValue()) + ";background-color:" + MakerPanel.HTMLC_TEXTBOX_B;
 			presets += "\">" + (entry.getKey() + 1) + " - " + TextboxUtil.TEXTBOX_PRESET_COLOR_NAMES.get(entry.getKey())
 					+ "</p></html>";
 			add(new JLabel(presets));
@@ -46,7 +46,9 @@ public class ModifierHelpPanel extends JPanel {
 		add(new JLabel(
 				"<html><p style=\"color:red;\"><b>ALL MODIFIERS UNDER THIS LINE ONLY WORK IN ANIMATED TEXTBOXES!</b></p></html>"));
 		add(new JSeparator());
-		add(new JLabel("<html><b>\\d[frames]</b> - Delays the text for <code>frames</code> frames</html>"));
+		add(new JLabel("<html><b>\\d[frames]</b> - Delays the text for <code>frames + text_speed</code> frames</html>"));
+		add(new JLabel(
+				"<html><b>\\s[frames]</b> - Sets the text speed to one character per <code>frames</code> frames. Basically the same as \\d but for <i>all</i> characters</html>"));
 		add(new JLabel(
 				"<html><b>\\@[face]</b> - Changes the textbox's facepic to <code>face</code>, or removes the facepic if <code>face</code> isn't specified</html>"));
 		add(new JLabel(

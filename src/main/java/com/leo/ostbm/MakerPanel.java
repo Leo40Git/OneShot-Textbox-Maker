@@ -13,11 +13,6 @@ import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -34,7 +29,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -96,9 +90,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
+import com.leo.ostbm.TextboxUtil.ParsedTextbox;
 import com.leo.ostbm.TextboxUtil.Textbox;
 import com.leo.ostbm.TextboxUtil.TextboxModifier;
-import com.leo.ostbm.TextboxUtil.TextboxParseData;
 import com.leo.ostbm.util.TableColumnAdjuster;
 
 public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener, ItemListener {
@@ -109,6 +103,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	public static final Color COLOR_TEXTBOX = Color.decode("0x180C1E");
 	public static final Color COLOR_TEXTBOX_B = COLOR_TEXTBOX.brighter().brighter();
+	public static final String HTMLC_TEXTBOX = ModifierHelpPanel.colorToHTML(COLOR_TEXTBOX);
+	public static final String HTMLC_TEXTBOX_B = ModifierHelpPanel.colorToHTML(COLOR_TEXTBOX_B);
 
 	public static final String A_FACE_FOLDER = "faceFolder";
 	public static final String A_CUSTOM_FACE = "customFace";
@@ -628,7 +624,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				graphicsControl.setAttribute("delayTime", "5");
 				graphicsControl.setAttribute("transparentColorIndex", "0");
 				IIOMetadataNode comments = getNode(root, "CommentExtensions");
-				comments.setAttribute("CommentExtension", "Animated OneShot Textbox");
+				comments.setAttribute("CommentExtension",
+						"Animated OneShot-style textbox, generated using OneShot Textbox Maker by Leo\nhttps://github.com/Leo40Git/OneShot-Textbox-Maker");
 				IIOMetadataNode application = getNode(root, "ApplicationExtensions");
 				IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
 				child.setAttribute("applicationID", "NETSCAPE");
@@ -646,9 +643,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				ios.flush();
 				data = baos.toByteArray();
 				image = Toolkit.getDefaultToolkit().createImage(data);
-			} catch (IOException e1) {
-				Main.LOGGER.error("Error while generating animation!", e1);
-				JOptionPane.showMessageDialog(this, "An exception occured while generating the animation:\n" + e1,
+			} catch (IOException ex) {
+				Main.LOGGER.error("Error while generating animation!", ex);
+				JOptionPane.showMessageDialog(this, "An exception occured while generating the animation:\n" + ex,
 						"Couldn't generate animation!", JOptionPane.ERROR_MESSAGE);
 			}
 			ImageIcon preview = new ImageIcon(image);
@@ -663,54 +660,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			previewFrame.setPreferredSize(size);
 			previewFrame.setMaximumSize(size);
 			previewFrame.setResizable(false);
-			final byte[] fdata = data;
-			previewFrame.add(new PreviewPanel(preview, (ActionEvent ae) -> {
-				String cmd = ae.getActionCommand();
-				switch (cmd) {
-				case PreviewPanel.A_SAVE_BOXES:
-					File sel = Main.openFileDialog(true, this, "Save textbox(es) animation",
-							new FileNameExtensionFilter("GIF files", "gif"));
-					if (sel == null)
-						return;
-					if (sel.exists()) {
-						int confirm = JOptionPane.showConfirmDialog(this,
-								"File \"" + sel.getName() + "\" already exists.\nOverwrite it?",
-								"Overwrite existing file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-						if (confirm != JOptionPane.YES_OPTION)
-							return;
-						sel.delete();
-					}
-					try (ImageOutputStream out = ImageIO.createImageOutputStream(sel)) {
-						out.write(fdata);
-					} catch (IOException e1) {
-						Main.LOGGER.error("Error while saving animation!", e1);
-						JOptionPane.showMessageDialog(this, "An exception occured while saving the animation:\n" + e1,
-								"Couldn't save animation!", JOptionPane.ERROR_MESSAGE);
-					}
-					break;
-				case PreviewPanel.A_COPY_BOXES:
-					File tmp = new File(System.getProperty("java.io.tmpdir"), "textbox.gif");
-					try (ImageOutputStream out = ImageIO.createImageOutputStream(tmp)) {
-						out.write(fdata);
-					} catch (IOException e1) {
-						Main.LOGGER.error("Error while copying animation to clipboard!", e1);
-						JOptionPane.showMessageDialog(this,
-								"An exception occured while copying the animation to the clipboard:\n" + e1,
-								"Couldn't copy animation to clipboard!", JOptionPane.ERROR_MESSAGE);
-					}
-					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new TransferableFileList(tmp),
-							new ClipboardOwner() {
-								@Override
-								public void lostOwnership(Clipboard clipboard, Transferable contents) {
-									tmp.delete();
-								}
-							});
-					break;
-				default:
-					Main.LOGGER.debug("Undefined action: " + cmd);
-					break;
-				}
-			}));
+			PreviewPanel previewPanel = new PreviewPanel(preview, new AnimationPreviewAL(previewFrame, data));
+			previewFrame.add(previewPanel);
 			previewFrame.pack();
 			previewFrame.setLocationRelativeTo(null);
 			previewFrame.setVisible(true);
@@ -718,39 +669,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		default:
 			Main.LOGGER.debug("Undefined action: " + a);
 			break;
-		}
-	}
-
-	public static class TransferableFileList implements Transferable {
-
-		private List<File> listOfFiles;
-
-		public TransferableFileList(List<File> listOfFiles) {
-			this.listOfFiles = listOfFiles;
-		}
-
-		public TransferableFileList(File file) {
-			listOfFiles = new ArrayList<>();
-			listOfFiles.add(file);
-		}
-
-		@Override
-		public DataFlavor[] getTransferDataFlavors() {
-			return new DataFlavor[] { DataFlavor.javaFileListFlavor };
-		}
-
-		@Override
-		public boolean isDataFlavorSupported(DataFlavor flavor) {
-			return DataFlavor.javaFileListFlavor.equals(flavor);
-		}
-
-		@Override
-		public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-			if (flavor.equals(DataFlavor.javaFileListFlavor) && listOfFiles != null) {
-				return listOfFiles;
-			} else {
-				throw new UnsupportedFlavorException(flavor);
-			}
 		}
 	}
 
@@ -773,7 +691,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			Textbox b = boxes.get(i);
 			if (Resources.getFace(b.face) == null)
 				b.face = Resources.FACE_BLANK;
-			TextboxParseData tpd = parseTextbox(b.text);
+			ParsedTextbox tpd = parseTextbox(b.text);
 			String text = tpd.strippedText;
 			String[] lines = text.split("\n");
 			int linesNum = lines.length;
@@ -1069,7 +987,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				int maxLen = 57;
 				if (!Resources.FACE_BLANK.equals(panel.faceSelect.getSelectedItem()))
 					maxLen -= 10;
-				TextboxParseData tpd = parseTextbox(getText());
+				ParsedTextbox tpd = parseTextbox(getText());
 				String[] lines = tpd.strippedText.split("\n");
 				int currentChar = 0, length = 0, ignoreOff = 0;
 				for (int i = 0; i < lines.length; i++) {
