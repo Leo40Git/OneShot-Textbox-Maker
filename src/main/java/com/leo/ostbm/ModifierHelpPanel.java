@@ -37,7 +37,7 @@ public class ModifierHelpPanel extends JPanel {
 
 		for (Map.Entry<Integer, Color> entry : TextboxUtil.TEXTBOX_PRESET_COLORS.entrySet()) {
 			String presets = "<html><p style=\"color:";
-			presets += colorToHTML(entry.getValue()) + ";background-color:" + MakerPanel.HTMLC_TEXTBOX_B;
+			presets += colorToHTML(entry.getValue()) + ";background-color:" + MakerPanel.HTMLC_TEXTBOX;
 			presets += "\">" + (entry.getKey() + 1) + " - " + TextboxUtil.TEXTBOX_PRESET_COLOR_NAMES.get(entry.getKey())
 					+ "</p></html>";
 			add(new JLabel(presets));
