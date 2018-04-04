@@ -1,4 +1,7 @@
-1.6.2
+1.6.3
+Hotfix 1.6.3:
+- Added facepic from April Fools update
+- App no longer freezes when generating animated textboxes
 Hotfix 1.6.2:
 - Fix some delay-related modifier highlighting screw-ups
 - Added "clone textbox" option
