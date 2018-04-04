@@ -423,7 +423,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					else {
 						int result = DialogUtil.showCustomConfirmDialog(this, "Textbox " + (i + 1)
 								+ " specifies a facepic that isn't currently loaded: \"" + box.face
-								+ "\nPress \"Abort\" to stop loading this project file,\n\"Ignore\" to ignore this error,\nor \"Ingore All\" to ignore this error and all future errors of this type."
+								+ "\"\nPress \"Abort\" (or close this dialog box) to stop loading this project file,\n\"Ignore\" to ignore this error,\nor \"Ingore All\" to ignore this error and all future errors of this type."
 								+ "\nPlease note that ignoring textboxes with this error will remove their facepic.",
 								"Missing facepic", new String[] { "Abort", "Ignore", "Ignore All" },
 								JOptionPane.ERROR_MESSAGE);
@@ -707,11 +707,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			Main.LOGGER.debug("Undefined action: " + a);
 			break;
 		}
-	}
-
-	@FunctionalInterface
-	private interface IConsumer<T> {
-		public void consume(T value);
 	}
 
 	private IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
