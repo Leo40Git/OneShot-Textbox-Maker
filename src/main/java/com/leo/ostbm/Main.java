@@ -1,7 +1,6 @@
 package com.leo.ostbm;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
@@ -23,7 +22,6 @@ import java.nio.channels.ReadableByteChannel;
 
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -36,7 +34,6 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,17 +100,14 @@ public class Main {
 				break;
 			case A_FILE_SAVE:
 				try {
-					panel.saveProjectFile(null);
+					panel.saveProjectFile(null, false);
 				} catch (IOException e1) {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
 			case A_FILE_SAVE_AS:
 				try {
-					File sel = openFileDialog(true, frame, "Save project file", MakerPanel.TBPROJ_FILTER);
-					if (sel == null)
-						break;
-					panel.saveProjectFile(sel);
+					panel.saveProjectFile(null, true);
 				} catch (IOException e1) {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
@@ -193,14 +187,14 @@ public class Main {
 		}
 		if (skipucF) {
 			LOGGER.info("Update check: skip file detected, skipping");
-			loadFrame = new LoadFrame();
+			loadFrame = new LoadFrame("Loading...", true);
 		} else {
 			loadFrame = updateCheck(false, false);
+			SwingUtilities.invokeLater(() -> {
+				loadFrame.setLoadString("Loading...");
+				loadFrame.repaint();
+			});
 		}
-		SwingUtilities.invokeLater(() -> {
-			loadFrame.setLoadString("Loading...");
-			loadFrame.repaint();
-		});
 		Resources.checkResFolder();
 		try {
 			Resources.initFonts();
@@ -289,7 +283,7 @@ public class Main {
 				return;
 			if (sel == JOptionPane.YES_OPTION)
 				try {
-					panel.saveProjectFile(null);
+					panel.saveProjectFile(null, false);
 				} catch (IOException e1) {
 					MenuActionListener.fileError(A_FILE_SAVE, e1, "Saving project failed",
 							"Could not save project file!");
@@ -325,7 +319,7 @@ public class Main {
 	}
 
 	public static LoadFrame updateCheck(boolean disposeOfLoadFrame, boolean showUpToDate) {
-		LoadFrame loadFrame = new LoadFrame();
+		LoadFrame loadFrame = new LoadFrame(true);
 		File verFile = new File(System.getProperty("user.dir") + "/temp.version");
 		LOGGER.info("Update check: starting");
 		try {
@@ -397,35 +391,6 @@ public class Main {
 			return null;
 		}
 		return loadFrame;
-	}
-
-	public static File openFileDialog(boolean openOrSave, Component parent, String title,
-			FileNameExtensionFilter filter) {
-		JFileChooser fc = new JFileChooser();
-		fc.setMultiSelectionEnabled(false);
-		fc.setAcceptAllFileFilterUsed(false);
-		fc.setDialogTitle(title);
-		fc.setFileFilter(filter);
-		fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-		if (openOrSave) {
-			int ret = fc.showSaveDialog(parent);
-			if (ret == JFileChooser.APPROVE_OPTION) {
-				File sel = fc.getSelectedFile();
-				String selName = sel.getName();
-				String ext = filter.getExtensions()[0];
-				if (!selName.contains(".")
-						|| !selName.substring(selName.lastIndexOf(".") + 1, selName.length()).equalsIgnoreCase(ext)) {
-					selName += "." + ext;
-					sel = new File(sel.getParentFile().getPath() + "/" + selName);
-				}
-				return sel;
-			}
-		} else {
-			int ret = fc.showOpenDialog(parent);
-			if (ret == JFileChooser.APPROVE_OPTION)
-				return fc.getSelectedFile();
-		}
-		return null;
 	}
 
 	private static void openSettings() {

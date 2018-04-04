@@ -1,11 +1,14 @@
 package com.leo.ostbm;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 public class LoadFrame extends JFrame {
@@ -18,27 +21,34 @@ public class LoadFrame extends JFrame {
 		loadLabel.setText(loadString);
 	}
 
-	public LoadFrame() {
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	public LoadFrame(String loadString, boolean important) {
+		setDefaultCloseOperation((important ? JFrame.EXIT_ON_CLOSE : JFrame.DO_NOTHING_ON_CLOSE));
 		setUndecorated(true);
 		final Dimension size = new Dimension(320, 120);
 		setPreferredSize(size);
 		setMaximumSize(size);
 		setMinimumSize(size);
 		setResizable(false);
-		loadLabel = new JLabel("Checking for updates...");
+		JPanel panel = new JPanel();
+		panel.setLayout(new BorderLayout());
+		panel.setBorder(BorderFactory.createLineBorder(MakerPanel.COLOR_TEXTBOX_B, 4));
+		panel.setBackground(MakerPanel.COLOR_TEXTBOX);
+		loadLabel = new JLabel(loadString);
 		loadLabel.setFont(loadLabel.getFont().deriveFont(Font.BOLD, 20));
 		loadLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		loadLabel.setVerticalAlignment(SwingConstants.CENTER);
-		loadLabel.setOpaque(true);
-		loadLabel.setBackground(MakerPanel.COLOR_TEXTBOX);
 		loadLabel.setForeground(Color.WHITE);
-		add(loadLabel);
+		panel.add(loadLabel, BorderLayout.CENTER);
+		add(panel);
 		pack();
 		setLocationRelativeTo(null);
 		setIconImages(Resources.getAppIcons());
 		setVisible(true);
 		requestFocus();
+	}
+
+	public LoadFrame(boolean important) {
+		this("Checking for updates...", important);
 	}
 
 }

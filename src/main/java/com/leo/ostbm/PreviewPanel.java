@@ -1,7 +1,6 @@
 package com.leo.ostbm;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -23,7 +22,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class PreviewPanel extends JPanel implements ActionListener {
@@ -75,13 +73,12 @@ public class PreviewPanel extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		Component parent = SwingUtilities.getRoot(this);
 		String cmd = e.getActionCommand();
 		switch (cmd) {
 		case A_COPY_BOXES:
 			Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
 			if (cb == null) {
-				JOptionPane.showMessageDialog(parent,
+				JOptionPane.showMessageDialog(this,
 						"Java does not support accessing this operating system's clipboard!",
 						"Couldn't copy image to clipboard!", JOptionPane.ERROR_MESSAGE);
 				break;
@@ -90,21 +87,21 @@ public class PreviewPanel extends JPanel implements ActionListener {
 				cb.setContents(new TransferableImage(image), null);
 			} catch (IllegalStateException ex) {
 				Main.LOGGER.error("Error while copying image to clipboard!", ex);
-				JOptionPane.showMessageDialog(parent,
+				JOptionPane.showMessageDialog(this,
 						"An exception occured while copying the image to the clipboard:\n" + ex,
 						"Couldn't copy image to clipboard!", JOptionPane.ERROR_MESSAGE);
 				break;
 			}
-			JOptionPane.showMessageDialog(parent, "Successfully copied the image to the clipboard.", "Success!",
+			JOptionPane.showMessageDialog(this, "Successfully copied the image to the clipboard.", "Success!",
 					JOptionPane.INFORMATION_MESSAGE);
 			break;
 		case A_SAVE_BOXES:
-			File sel = Main.openFileDialog(true, parent, "Save textbox(es) image",
+			File sel = DialogUtil.openFileDialog(true, this, "Save textbox(es) image",
 					new FileNameExtensionFilter("PNG files", "png"));
 			if (sel == null)
 				return;
 			if (sel.exists()) {
-				int confirm = JOptionPane.showConfirmDialog(parent,
+				int confirm = JOptionPane.showConfirmDialog(this,
 						"File \"" + sel.getName() + "\" already exists?\nOverwrite it?", "Overwrite existing file?",
 						JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				if (confirm != JOptionPane.YES_OPTION)
@@ -115,11 +112,11 @@ public class PreviewPanel extends JPanel implements ActionListener {
 				ImageIO.write(image, "png", sel);
 			} catch (IOException ex) {
 				Main.LOGGER.error("Error while saving image!", ex);
-				JOptionPane.showMessageDialog(parent, "An exception occured while saving the image:\n" + ex,
+				JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + ex,
 						"Couldn't save image!", JOptionPane.ERROR_MESSAGE);
 				break;
 			}
-			JOptionPane.showMessageDialog(parent, "Successfully saved the image to:\n" + sel.getAbsolutePath(),
+			JOptionPane.showMessageDialog(this, "Successfully saved the image to:\n" + sel.getAbsolutePath(),
 					"Success!", JOptionPane.INFORMATION_MESSAGE);
 			break;
 		default:

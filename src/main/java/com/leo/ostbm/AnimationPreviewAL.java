@@ -24,9 +24,12 @@ public class AnimationPreviewAL implements ActionListener {
 	private Component parent;
 	private final byte[] animData;
 	
-	public AnimationPreviewAL(Component parent, byte[] animData) {
-		this.parent = parent;
+	public AnimationPreviewAL(byte[] animData) {
 		this.animData = animData;
+	}
+	
+	public void setParent(Component parent) {
+		this.parent = parent;
 	}
 
 	@Override
@@ -34,7 +37,7 @@ public class AnimationPreviewAL implements ActionListener {
 		String cmd = e.getActionCommand();
 		switch (cmd) {
 		case PreviewPanel.A_SAVE_BOXES:
-			File sel = Main.openFileDialog(true, parent, "Save textbox(es) animation",
+			File sel = DialogUtil.openFileDialog(true, parent, "Save textbox(es) animation",
 					new FileNameExtensionFilter("GIF files", "gif"));
 			if (sel == null)
 				return;

@@ -353,35 +353,36 @@ public class TextboxUtil {
 				List<TextboxModifier> mods = tpd.mods.get(0);
 				if (mods.get(0).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
 					instant = true;
-				for (int j = (instant ? 1 : 0); j < mods.size(); j++) {
-					TextboxModifier mod = mods.get(j);
-					switch (mod.type) {
-					case DELAY:
-						Integer newDelay = delay;
-						try {
-							newDelay = Integer.parseInt(mod.args[0]);
-							newDelay = Math.max(0, newDelay);
-						} catch (NumberFormatException e) {
-							Main.LOGGER.error("Error while parsing delay!", e);
-							newDelay = delay;
+				else
+					for (int j = 0; j < mods.size(); j++) {
+						TextboxModifier mod = mods.get(j);
+						switch (mod.type) {
+						case DELAY:
+							Integer newDelay = delay;
+							try {
+								newDelay = Integer.parseInt(mod.args[0]);
+								newDelay = Math.max(1, newDelay);
+							} catch (NumberFormatException e) {
+								Main.LOGGER.error("Error while parsing delay!", e);
+								newDelay = delay;
+							}
+							delay = newDelay + speed;
+							break;
+						case SPEED:
+							Integer newSpeed = speed;
+							try {
+								newSpeed = Integer.parseInt(mod.args[0]);
+								newSpeed = Math.max(1, newSpeed);
+							} catch (NumberFormatException e) {
+								Main.LOGGER.error("Error while parsing speed!", e);
+								newSpeed = speed;
+							}
+							speed = newSpeed;
+							break;
+						default:
+							break;
 						}
-						delay = newDelay + speed;
-						break;
-					case SPEED:
-						Integer newSpeed = speed;
-						try {
-							newSpeed = Integer.parseInt(mod.args[0]);
-							newSpeed = Math.max(1, newSpeed);
-						} catch (NumberFormatException e) {
-							Main.LOGGER.error("Error while parsing speed!", e);
-							newSpeed = speed;
-						}
-						speed = newSpeed;
-						break;
-					default:
-						break;
 					}
-				}
 			}
 			boolean endsWithInterrupt = false;
 			if (tpd.mods.containsKey(text.length())) {
@@ -392,11 +393,12 @@ public class TextboxUtil {
 			if (instant)
 				ret.add(drawTextbox(face, tpd, false));
 			else {
+				if (delay == 1)
+					delay = speed;
 				// add a blank textbox frame
 				for (int d = 0; d < delay; d++)
 					ret.add(drawTextbox(box.face, "", false));
 				for (int l = 0; l < text.length() - 1; l++) {
-					delay = speed;
 					if (tpd.mods.containsKey(l + 1)) {
 						List<TextboxModifier> mods = tpd.mods.get(l + 1);
 						for (TextboxModifier mod : mods) {

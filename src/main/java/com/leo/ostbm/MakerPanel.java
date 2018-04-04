@@ -320,15 +320,14 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 	public void newProjectFile() throws IOException {
 		updateCurrentBox();
-		boolean emptyProject = isProjectEmpty();
-		if (!emptyProject) {
+		if (!isProjectEmpty()) {
 			int result = JOptionPane.showConfirmDialog(this,
 					"Do you want to save the current project before creating a new project?",
 					"Save before creating new project?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (result == JOptionPane.CANCEL_OPTION)
 				return;
 			else if (result == JOptionPane.YES_OPTION)
-				saveProjectFile(null);
+				saveProjectFile(null, false);
 		}
 		projectFile = null;
 		boxes.clear();
@@ -338,25 +337,38 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		updateBoxList();
 	}
 
-	public void saveProjectFile(File dest) throws IOException {
-		updateCurrentBox();
-		int hasCustomFace = -1;
+	private boolean saveCheckCustomFacepics() {
+		List<Integer> hasCustomFace = new LinkedList<>();
 		for (int i = 0; i < boxes.size(); i++) {
-			if (Resources.getFace(boxes.get(i).face).isCustom()) {
-				hasCustomFace = i;
-				break;
-			}
+			if (Resources.getFace(boxes.get(i).face).isCustom())
+				hasCustomFace.add(i + 1);
 		}
-		if (hasCustomFace != -1) {
-			int result = JOptionPane.showConfirmDialog(this, "Textbox " + (hasCustomFace + 1)
-					+ " has a custom face!\nThis will prevent a user without the custom from opening the project file.\nSave anyway?",
+		if (!hasCustomFace.isEmpty()) {
+			String tb = "Textbox";
+			if (hasCustomFace.size() == 1)
+				tb += " " + hasCustomFace.get(0);
+			else {
+				tb += "es ";
+				for (int i : hasCustomFace)
+					tb += i + ", ";
+				tb = tb.substring(0, tb.length() - 2);
+			}
+			int result = JOptionPane.showConfirmDialog(this, tb
+					+ " has a custom face!\nThis will prevent a user without the custom from opening the project file without errors.\nSave anyway?",
 					"Textbox has custom face", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (result == JOptionPane.NO_OPTION)
-				return;
+				return false;
 		}
-		if (dest == null) {
-			if (projectFile == null) {
-				File sel = Main.openFileDialog(true, this, "Save project file", TBPROJ_FILTER);
+		return true;
+	}
+
+	public void saveProjectFile(File dest, boolean saveAs) throws IOException {
+		updateCurrentBox();
+		if (!saveCheckCustomFacepics())
+			return;
+		if (dest == null || saveAs) {
+			if (projectFile == null || saveAs) {
+				File sel = DialogUtil.openFileDialog(true, this, "Save project file", TBPROJ_FILTER);
 				if (sel == null)
 					return;
 				projectFile = sel;
@@ -390,10 +402,10 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			if (result == JOptionPane.CANCEL_OPTION)
 				return;
 			else if (result == JOptionPane.YES_OPTION)
-				saveProjectFile(null);
+				saveProjectFile(null, false);
 		}
 		if (src == null) {
-			src = Main.openFileDialog(false, this, "Load project file", TBPROJ_FILTER);
+			src = DialogUtil.openFileDialog(false, this, "Load project file", TBPROJ_FILTER);
 			if (src == null)
 				return;
 		}
@@ -402,14 +414,31 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			Type type = new TypeToken<List<Textbox>>() {
 			}.getType();
 			List<Textbox> temp = gson.fromJson(reader, type);
+			boolean ignoreFacepicErrors = false;
 			for (int i = 0; i < temp.size(); i++) {
 				Textbox box = temp.get(i);
 				if (Resources.getFace(box.face) == null) {
-					JOptionPane.showMessageDialog(this,
-							"Textbox " + (i + 1) + " specifies a facepic that isn't currently loaded: \"" + box.face
-									+ "\"\nPlease make sure there is a loaded facepic with that name, then try again.",
-							"Missing facepic", JOptionPane.ERROR_MESSAGE);
-					return;
+					if (ignoreFacepicErrors)
+						box.face = Resources.FACE_BLANK;
+					else {
+						int result = DialogUtil.showCustomConfirmDialog(this, "Textbox " + (i + 1)
+								+ " specifies a facepic that isn't currently loaded: \"" + box.face
+								+ "\nPress \"Abort\" to stop loading this project file,\n\"Ignore\" to ignore this error,\nor \"Ingore All\" to ignore this error and all future errors of this type."
+								+ "\nPlease note that ignoring textboxes with this error will remove their facepic.",
+								"Missing facepic", new String[] { "Abort", "Ignore", "Ignore All" },
+								JOptionPane.ERROR_MESSAGE);
+						switch (result) {
+						case JOptionPane.CLOSED_OPTION:
+						case 0: // Abort
+						default:
+							return;
+						case 2: // Ignore All
+							ignoreFacepicErrors = true;
+						case 1: // Ignore
+							box.face = Resources.FACE_BLANK;
+							continue;
+						}
+					}
 				}
 			}
 			boxes.clear();
@@ -438,10 +467,9 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		JFileChooser fc;
 		int ret;
 		Textbox box, copyBox;
-		JDialog previewFrame;
-		int extraHeight, maxHeight;
-		Dimension size;
+		LoadFrame gf;
 		boolean cloneFacepics = Config.getBoolean(Config.KEY_COPY_FACEPICS, true);
+		final Frame parent = (Frame) SwingUtilities.getWindowAncestor(this);
 		switch (a) {
 		case A_FACE_FOLDER:
 			if (!Desktop.isDesktopSupported())
@@ -566,110 +594,124 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			updateBoxList();
 			break;
 		case A_MODIFIER_HELP:
-			previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Modifier Help", true);
-			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			previewFrame.setResizable(false);
-			previewFrame.add(new ModifierHelpPanel());
-			previewFrame.pack();
-			previewFrame.setLocationRelativeTo(null);
-			previewFrame.setVisible(true);
+			JDialog modFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Modifier Help", true);
+			modFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			modFrame.setResizable(false);
+			modFrame.add(new ModifierHelpPanel());
+			modFrame.pack();
+			modFrame.setLocationRelativeTo(null);
+			modFrame.setVisible(true);
 			break;
 		case A_MAKE_BOXES:
 			updateCurrentBox();
 			BufferedImage boxesImage = new BufferedImage(608, 128 * boxes.size() + 2 * (boxes.size() - 1),
 					BufferedImage.TYPE_4BYTE_ABGR);
 			Graphics big = boxesImage.getGraphics();
-			if (checkTextboxes())
+			if (!checkTextboxes())
+				return;
+			gf = new LoadFrame("Generating textbox(es)...", false);
+			SwingUtilities.invokeLater(() -> {
 				for (int i = 0; i < boxes.size(); i++) {
 					Textbox b = boxes.get(i);
 					drawTextbox(big, b.face, b.text, 0, 130 * i, i < boxes.size() - 1);
 				}
-			else
-				return;
-			previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
-			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			extraHeight = 82;
-			size = new Dimension(652, boxesImage.getHeight() + extraHeight);
-			maxHeight = 128 * 5 + 2 * 4 + extraHeight;
-			if (size.height > maxHeight)
-				size.height = maxHeight + 16;
-			previewFrame.setMinimumSize(size);
-			previewFrame.setPreferredSize(size);
-			previewFrame.setMaximumSize(size);
-			previewFrame.setResizable(false);
-			previewFrame.add(new PreviewPanel(boxesImage));
-			previewFrame.pack();
-			previewFrame.setLocationRelativeTo(null);
-			previewFrame.setVisible(true);
+				gf.dispose();
+				JDialog previewFrame = new JDialog(parent, "Textbox(es) preview", true);
+				previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				int extraHeight = 82;
+				Dimension size = new Dimension(652, boxesImage.getHeight() + extraHeight);
+				int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
+				if (size.height > maxHeight)
+					size.height = maxHeight + 16;
+				previewFrame.setMinimumSize(size);
+				previewFrame.setPreferredSize(size);
+				previewFrame.setMaximumSize(size);
+				previewFrame.setResizable(false);
+				previewFrame.add(new PreviewPanel(boxesImage));
+				previewFrame.pack();
+				previewFrame.setLocationRelativeTo(null);
+				previewFrame.setVisible(true);
+			});
 			break;
 		case A_MAKE_BOXES_ANIM:
 			updateCurrentBox();
 			if (!checkTextboxes())
 				return;
-			List<BufferedImage> boxFrames = makeTextboxAnimation(boxes);
-			byte[] data = null;
-			Image image = null;
-			try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
-				ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
-				IIOMetadata meta = writer.getDefaultImageMetadata(
-						ImageTypeSpecifier.createFromBufferedImageType(boxFrames.get(0).getType()),
-						writer.getDefaultWriteParam());
-				String metaFormatName = meta.getNativeMetadataFormatName();
-				IIOMetadataNode root = (IIOMetadataNode) meta.getAsTree(metaFormatName);
-				IIOMetadataNode graphicsControl = getNode(root, "GraphicControlExtension");
-				graphicsControl.setAttribute("disposalMethod", "none");
-				graphicsControl.setAttribute("userInputFlag", "FALSE");
-				graphicsControl.setAttribute("transparentColorFlag", "FALSE");
-				graphicsControl.setAttribute("delayTime", "5");
-				graphicsControl.setAttribute("transparentColorIndex", "0");
-				IIOMetadataNode comments = getNode(root, "CommentExtensions");
-				comments.setAttribute("CommentExtension",
-						"Animated OneShot-style textbox, generated using OneShot Textbox Maker by Leo\nhttps://github.com/Leo40Git/OneShot-Textbox-Maker");
-				IIOMetadataNode application = getNode(root, "ApplicationExtensions");
-				IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
-				child.setAttribute("applicationID", "NETSCAPE");
-				child.setAttribute("authenticationCode", "2.0");
-				child.setUserObject(new byte[] { 0x1, (byte) (0 & 0xFF), (byte) ((0 >> 8) & 0xFF) });
-				application.appendChild(child);
-				meta.setFromTree(metaFormatName, root);
-				writer.setOutput(ios);
-				writer.prepareWriteSequence(null);
-				for (int i = 0; i < boxFrames.size(); i++) {
-					BufferedImage frame = boxFrames.get(i);
-					writer.writeToSequence(new IIOImage(frame, null, meta), writer.getDefaultWriteParam());
+			gf = new LoadFrame("Generating textbox(es)...", false);
+			SwingUtilities.invokeLater(() -> {
+				byte[] data = null;
+				Image image = null;
+				List<BufferedImage> boxFrames = makeTextboxAnimation(boxes);
+				try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
+					ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
+					IIOMetadata meta = writer.getDefaultImageMetadata(
+							ImageTypeSpecifier.createFromBufferedImageType(boxFrames.get(0).getType()),
+							writer.getDefaultWriteParam());
+					String metaFormatName = meta.getNativeMetadataFormatName();
+					IIOMetadataNode root = (IIOMetadataNode) meta.getAsTree(metaFormatName);
+					IIOMetadataNode graphicsControl = getNode(root, "GraphicControlExtension");
+					graphicsControl.setAttribute("disposalMethod", "none");
+					graphicsControl.setAttribute("userInputFlag", "FALSE");
+					graphicsControl.setAttribute("transparentColorFlag", "FALSE");
+					graphicsControl.setAttribute("delayTime", "5");
+					graphicsControl.setAttribute("transparentColorIndex", "0");
+					IIOMetadataNode comments = getNode(root, "CommentExtensions");
+					comments.setAttribute("CommentExtension",
+							"Animated OneShot-style textbox, generated using OneShot Textbox Maker by Leo\nhttps://github.com/Leo40Git/OneShot-Textbox-Maker");
+					IIOMetadataNode application = getNode(root, "ApplicationExtensions");
+					IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
+					child.setAttribute("applicationID", "NETSCAPE");
+					child.setAttribute("authenticationCode", "2.0");
+					child.setUserObject(new byte[] { 0x1, (byte) (0 & 0xFF), (byte) ((0 >> 8) & 0xFF) });
+					application.appendChild(child);
+					meta.setFromTree(metaFormatName, root);
+					writer.setOutput(ios);
+					writer.prepareWriteSequence(null);
+					for (int i = 0; i < boxFrames.size(); i++) {
+						BufferedImage frame = boxFrames.get(i);
+						writer.writeToSequence(new IIOImage(frame, null, meta), writer.getDefaultWriteParam());
+					}
+					writer.endWriteSequence();
+					ios.flush();
+					data = baos.toByteArray();
+					image = Toolkit.getDefaultToolkit().createImage(data);
+				} catch (IOException ex) {
+					Main.LOGGER.error("Error while generating animation!", ex);
+					JOptionPane.showMessageDialog(this, "An exception occured while generating the animation:\n" + ex,
+							"Couldn't generate animation!", JOptionPane.ERROR_MESSAGE);
 				}
-				writer.endWriteSequence();
-				ios.flush();
-				data = baos.toByteArray();
-				image = Toolkit.getDefaultToolkit().createImage(data);
-			} catch (IOException ex) {
-				Main.LOGGER.error("Error while generating animation!", ex);
-				JOptionPane.showMessageDialog(this, "An exception occured while generating the animation:\n" + ex,
-						"Couldn't generate animation!", JOptionPane.ERROR_MESSAGE);
-			}
-			ImageIcon preview = new ImageIcon(image);
-			previewFrame = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Textbox(es) preview", true);
-			previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			extraHeight = 82;
-			size = new Dimension(652, boxFrames.get(0).getHeight() + extraHeight);
-			maxHeight = 128 * 5 + 2 * 4 + extraHeight;
-			if (size.height > maxHeight)
-				size.height = maxHeight + 16;
-			previewFrame.setMinimumSize(size);
-			previewFrame.setPreferredSize(size);
-			previewFrame.setMaximumSize(size);
-			previewFrame.setResizable(false);
-			PreviewPanel previewPanel = new PreviewPanel(preview, new AnimationPreviewAL(previewFrame, data));
-			previewFrame.add(previewPanel);
-			previewFrame.pack();
-			previewFrame.setLocationRelativeTo(null);
-			previewFrame.setVisible(true);
+				gf.dispose();
+				ImageIcon preview = new ImageIcon(image);
+				JDialog previewFrame = new JDialog(parent, "Textbox(es) preview", true);
+				previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				int extraHeight = 82;
+				Dimension size = new Dimension(652, Resources.getTextboxImage().getHeight() + extraHeight);
+				int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
+				if (size.height > maxHeight)
+					size.height = maxHeight + 16;
+				previewFrame.setMinimumSize(size);
+				previewFrame.setPreferredSize(size);
+				previewFrame.setMaximumSize(size);
+				previewFrame.setResizable(false);
+				AnimationPreviewAL al;
+				PreviewPanel previewPanel = new PreviewPanel(preview, (al = new AnimationPreviewAL(data)));
+				al.setParent(previewPanel);
+				previewFrame.add(previewPanel);
+				previewFrame.pack();
+				previewFrame.setLocationRelativeTo(null);
+				previewFrame.setVisible(true);
+			});
 			break;
 		default:
 			Main.LOGGER.debug("Undefined action: " + a);
 			break;
 		}
+	}
+
+	@FunctionalInterface
+	private interface IConsumer<T> {
+		public void consume(T value);
 	}
 
 	private IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
