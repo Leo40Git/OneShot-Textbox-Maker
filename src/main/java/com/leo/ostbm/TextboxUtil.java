@@ -1,13 +1,18 @@
 package com.leo.ostbm;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,7 +64,7 @@ public class TextboxUtil {
 
 		public enum ModType {
 			FACE('@', 0, 1), COLOR('c', 0, 1, 3), DELAY('d', 1), INSTANT_INTERRUPT('i'), SPEED('s', 1),
-			UNICODE_INSERT('u', 1), TEXT_FORMAT('f');
+			UNICODE_INSERT('u', 1), FORMAT('f', 0, 1);
 
 			private char modChar;
 			private int[] argNums;
@@ -122,11 +127,20 @@ public class TextboxUtil {
 		public final StyleType type;
 		public final int pos;
 		public final int length;
+		public final Color color;
+		public final String format;
 
-		public StyleSpan(final StyleType type, final int pos, final int length) {
+		public StyleSpan(final StyleType type, final int pos, final int length, final Color color,
+				final String format) {
 			this.type = type;
 			this.pos = pos;
 			this.length = length;
+			this.color = color;
+			this.format = format;
+		}
+
+		public StyleSpan(final StyleType type, final int pos, final int length) {
+			this(type, pos, length, null, null);
 		}
 	}
 
@@ -176,16 +190,22 @@ public class TextboxUtil {
 		final ParsedTextbox ret = new ParsedTextbox(styleSpans, errors, mods);
 		final StringBuilder strippedBuilder = new StringBuilder();
 		final String[] lines = text.split("\n");
+		final int[] strippedChars = new int[lines.length];
 		if (lines.length > 4)
 			errors.add(new TextboxError(-1, "Too many lines: has " + lines.length + " lines, but maximum is 4 lines"));
 		int styleOff = 0, modPos = 0;
+		Color col = Color.WHITE;
+		String format = "";
 		for (int i = 0; i < lines.length; i++) {
+			StyleSpan.StyleType defType = StyleSpan.StyleType.NORMAL;
+			if (i > 3)
+				defType = StyleSpan.StyleType.ERROR;
 			final SplitResult sp = StringUtil.split(lines[i], '`');
 			if (sp.partCount == 0) {
 				// no mods here
 				final String line = lines[i];
 				strippedBuilder.append(line);
-				styleSpans.add(new StyleSpan(StyleSpan.StyleType.NORMAL, 0, line.length()));
+				styleSpans.add(new StyleSpan(defType, 0, line.length(), col, format));
 				continue;
 			}
 			// first part is always not a modifier
@@ -194,7 +214,7 @@ public class TextboxUtil {
 				final String part = sp.parts[0];
 				modPos += part.length();
 				strippedBuilder.append(part);
-				styleSpans.add(new StyleSpan(StyleSpan.StyleType.NORMAL, styleOff, part.length()));
+				styleSpans.add(new StyleSpan(defType, styleOff, part.length(), col, format));
 			}
 			for (int j = 1; j < sp.partCount; j++) {
 				final int ind = sp.partIndex[j];
@@ -254,6 +274,7 @@ public class TextboxUtil {
 					}
 					modLen += end;
 				}
+				strippedChars[i] += modLen;
 				final TextboxModifier modObj = new TextboxModifier(modType, args);
 				Main.LOGGER.info("adding " + modObj + " to index " + modPos);
 				ret.addModifier(modPos, modObj);
@@ -262,7 +283,20 @@ public class TextboxUtil {
 				modPos += normPart.length();
 				strippedBuilder.append(normPart);
 				Main.LOGGER.info("next index will be " + modPos + " (after adding " + normPart.length() + ")");
-				styleSpans.add(new StyleSpan(StyleSpan.StyleType.NORMAL, styleOff + ind - 1 + modLen, part.length()));
+				switch (modObj.type) {
+				case COLOR:
+					col = getColorModValue(modObj, Color.WHITE);
+					break;
+				case FORMAT:
+					if (modObj.args.length == 0)
+						format = "";
+					else
+						format = modObj.args[0].toLowerCase();
+					break;
+				default:
+					break;
+				}
+				styleSpans.add(new StyleSpan(defType, styleOff + ind - 1 + modLen, part.length(), col, format));
 			}
 			strippedBuilder.append('\n');
 			styleOff += lines[i].length() + 1;
@@ -279,7 +313,7 @@ public class TextboxUtil {
 				maxLen -= 10;
 			final int len = strippedLines[i].length();
 			if (len > maxLen) {
-				styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + maxLen, len));
+				styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + strippedChars[i] + maxLen, len));
 				errors.add(new TextboxError(i, "Line too long: has " + len + " characters , but maximum is " + maxLen
 						+ " characters (with" + (!hasFace ? "out" : "") + " face)"));
 			}
@@ -358,7 +392,7 @@ public class TextboxUtil {
 		TEXTBOX_PRESET_COLOR_NAMES = Collections.unmodifiableMap(cnames);
 	}
 
-	public static Color getColorModValue(final TextboxModifier mod, final Color defaultColor) {
+	private static Color getColorModValue(final TextboxModifier mod, final Color defaultColor) {
 		if (mod.type != TextboxModifier.ModType.COLOR)
 			return defaultColor;
 		Color retColor = defaultColor;
@@ -396,10 +430,11 @@ public class TextboxUtil {
 	}
 
 	private static void drawTextboxString(final Graphics g, final ParsedTextbox tpd, int x, int y) {
-		g.setFont(Resources.getTextboxFont());
+		Graphics2D g2 = (Graphics2D)g;
+		g2.setFont(Resources.getTextboxFont());
 		final int startX = x;
-		final Color defaultCol = g.getColor();
-		final FontMetrics fm = g.getFontMetrics();
+		final Color defaultCol = g2.getColor();
+		FontMetrics fm = g2.getFontMetrics();
 		final int lineSpace = fm.getHeight() + 1;
 		final String text = tpd.strippedText;
 		int currentChar = 0;
@@ -415,11 +450,39 @@ public class TextboxUtil {
 					for (int j = 0; j < mods.size(); j++) {
 						final TextboxModifier mod = mods.get(j);
 						Main.LOGGER.info(i + ":" + currentChar + " - mod " + j + " is " + mod);
-						if (mod.type == TextboxModifier.ModType.COLOR)
+						switch (mod.type) {
+						case COLOR:
 							g.setColor(getColorModValue(mod, defaultCol));
+							break;
+						case FORMAT:
+							Font f = g2.getFont();
+							final String format = mod.args.length == 0 ? "" : mod.args[0].toLowerCase();
+							Map<TextAttribute, Object> map = new Hashtable<TextAttribute, Object>();
+							if (format.contains("i")) {
+								map.put(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE);
+								g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+							} else {
+								map.put(TextAttribute.POSTURE, -1);
+								g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+							}
+							if (format.contains("u"))
+								map.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+							else
+								map.put(TextAttribute.UNDERLINE, -1);
+							if (format.contains("s"))
+								map.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
+							else
+								map.put(TextAttribute.STRIKETHROUGH, -1);
+							f = f.deriveFont(map);
+							g2.setFont(f);
+							fm = g2.getFontMetrics();
+							break;
+						default:
+							break;
+						}
 					}
 				}
-				g.drawString(Character.toString(c), x, y);
+				g2.drawString(Character.toString(c), x, y);
 				x += fm.charWidth(c);
 				currentChar++;
 			}

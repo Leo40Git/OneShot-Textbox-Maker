@@ -80,6 +80,7 @@ import javax.swing.text.Document;
 import javax.swing.text.Element;
 import javax.swing.text.IconView;
 import javax.swing.text.LabelView;
+import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.ParagraphView;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
@@ -727,7 +728,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			final Textbox b = boxes.get(i);
 			final ParsedTextbox tpd = parseTextbox(b.face, b.text);
 			for (final TextboxError err : tpd.errors)
-				errors.add(new String[] { Integer.toString(i + 1), Integer.toString(err.lineNum + 1), err.message });
+				errors.add(new String[] { Integer.toString(i + 1), err.lineNum < 0 ? "N/A" : Integer.toString(err.lineNum + 1), err.message });
 			if (errors.isEmpty())
 				return true;
 		}
@@ -994,7 +995,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			final Document doc = getDocument();
 			if (doc instanceof StyledDocument) {
 				final StyledDocument stylDoc = (StyledDocument) doc;
-				AttributeSet style = styleNormal;
+				MutableAttributeSet style = styleNormal;
 				stylDoc.setParagraphAttributes(0, doc.getLength(), style, true);
 				stylDoc.setCharacterAttributes(0, doc.getLength(), style, true);
 				ParsedTextbox tpd = null;
@@ -1013,7 +1014,12 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 						style = styleMod;
 						break;
 					case NORMAL:
-						style = styleNormal;
+						style = new SimpleAttributeSet(styleNormal);
+						if (span.color != null)
+							StyleConstants.setForeground(style, span.color);
+						StyleConstants.setItalic(style, span.format.contains("i"));
+						StyleConstants.setUnderline(style, span.format.contains("u"));
+						StyleConstants.setStrikeThrough(style, span.format.contains("s"));
 						break;
 					default:
 						break;

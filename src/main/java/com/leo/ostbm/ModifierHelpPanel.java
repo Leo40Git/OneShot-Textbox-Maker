@@ -33,7 +33,7 @@ public class ModifierHelpPanel extends JPanel {
 				"<html>Modifiers are formatted like so:<br /><code>`m[parameters]</code><br />If a modifier does not need any parameters, the square brackets can be omitted.</html>"));
 		add(new JSeparator());
 		add(new JLabel(
-				"<html><b>\\c</b> - Changes the text color<br />3 parameters: custom RGB color (<code>[red,green,blue]</code>)<br />1 parameter: preset color OR hex color (<code>[h:RRGGBB]</code>)<br />no parameters: default color<br>Available preset colors are:</html>"));
+				"<html><b>`c</b> - Changes the text color<br />3 parameters: custom RGB color (<code>[red,green,blue]</code>)<br />1 parameter: preset color OR hex color (<code>[h:RRGGBB]</code>)<br />no parameters: default color<br>Available preset colors are:</html>"));
 
 		for (final Map.Entry<Integer, Color> entry : TextboxUtil.TEXTBOX_PRESET_COLORS.entrySet()) {
 			String presets = "<html><p style=\"color:";
@@ -47,13 +47,13 @@ public class ModifierHelpPanel extends JPanel {
 				"<html><p style=\"color:red;\"><b>ALL MODIFIERS UNDER THIS LINE ONLY WORK IN ANIMATED TEXTBOXES!</b></p></html>"));
 		add(new JSeparator());
 		add(new JLabel(
-				"<html><b>\\d[frames]</b> - Delays the text for <code>frames + text_speed</code> frames</html>"));
+				"<html><b>`d[frames]</b> - Delays the text for <code>frames + text_speed</code> frames</html>"));
 		add(new JLabel(
-				"<html><b>\\s[frames]</b> - Sets the text speed to one character per <code>frames</code> frames. Basically the same as \\d but for <i>all</i> characters</html>"));
+				"<html><b>`s[frames]</b> - Sets the text speed to one character per <code>frames</code> frames. Basically the same as `d but for <i>all</i> characters</html>"));
 		add(new JLabel(
-				"<html><b>\\@[face]</b> - Changes the textbox's facepic to <code>face</code>, or removes the facepic if <code>face</code> isn't specified</html>"));
+				"<html><b>`@[face]</b> - Changes the textbox's facepic to <code>face</code>, or removes the facepic if <code>face</code> isn't specified</html>"));
 		add(new JLabel(
-				"<html><b>\\i</b> - If at the start of a textbox, causes the text to appear instantly;<br/>If at the end of a textbox, causes the next textbox to interrupt the current textbox.</html>"));
+				"<html><b>`i</b> - If at the start of a textbox, causes the text to appear instantly;<br/>If at the end of a textbox, causes the next textbox to interrupt the current textbox.</html>"));
 	}
 
 }
