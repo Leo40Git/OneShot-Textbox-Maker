@@ -27,24 +27,24 @@ public class Config {
 		try {
 			config.removeNode();
 			config = null;
-		} catch (BackingStoreException e) {
+		} catch (final BackingStoreException e) {
 			Main.LOGGER.error("Error while wiping configuration!", e);
 		}
 	}
 
-	public static String get(String key, String def) {
+	public static String get(final String key, final String def) {
 		return config.get(key, def);
 	}
 
-	public static void set(String key, String value) {
+	public static void set(final String key, final String value) {
 		config.put(key, value);
 	}
 
-	public static boolean getBoolean(String key, boolean def) {
+	public static boolean getBoolean(final String key, final boolean def) {
 		return config.getBoolean(key, def);
 	}
 
-	public static void setBoolean(String key, boolean value) {
+	public static void setBoolean(final String key, final boolean value) {
 		config.putBoolean(key, value);
 	}
 

@@ -34,6 +34,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.WindowConstants;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +45,7 @@ public class Main {
 
 	public static final Logger LOGGER = LogManager.getLogger("OSTBM");
 
-	public static final Version VERSION = new Version("1.6.3");
+	public static final Version VERSION = new Version("2.0");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
@@ -59,13 +60,13 @@ public class Main {
 	public static final String A_HELP_ABOUT = "help:about";
 
 	private static JFrame frame;
-	
+
 	public static JFrame getFrame() {
 		return frame;
 	}
-	
+
 	private static MakerPanel panel;
-	
+
 	public static MakerPanel getPanel() {
 		return panel;
 	}
@@ -74,41 +75,42 @@ public class Main {
 
 		private ImageIcon aboutIcon;
 
-		public static void fileError(String command, IOException e, String title, String message) {
+		public static void fileError(final String command, final IOException e, final String title,
+				final String message) {
 			LOGGER.error("File command \"" + command + "\" failed!", e);
 			JOptionPane.showMessageDialog(frame, message, title, JOptionPane.ERROR_MESSAGE);
 		}
 
 		@Override
-		public void actionPerformed(ActionEvent e) {
-			String cmd = e.getActionCommand();
+		public void actionPerformed(final ActionEvent e) {
+			final String cmd = e.getActionCommand();
 			switch (cmd) {
 			// "File" Menu
 			case A_FILE_NEW:
 				try {
 					panel.newProjectFile();
-				} catch (IOException e1) {
+				} catch (final IOException e1) {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
 			case A_FILE_LOAD:
 				try {
 					panel.loadProjectFile(null);
-				} catch (IOException e1) {
+				} catch (final IOException e1) {
 					fileError(cmd, e1, "Loading project failed", "Could not load project file!");
 				}
 				break;
 			case A_FILE_SAVE:
 				try {
 					panel.saveProjectFile(null, false);
-				} catch (IOException e1) {
+				} catch (final IOException e1) {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
 			case A_FILE_SAVE_AS:
 				try {
 					panel.saveProjectFile(null, true);
-				} catch (IOException e1) {
+				} catch (final IOException e1) {
 					fileError(cmd, e1, "Saving project failed", "Could not save project file!");
 				}
 				break;
@@ -130,7 +132,8 @@ public class Main {
 				JOptionPane.showMessageDialog(frame,
 						"OneShot Textbox Maker (OSTBM) version " + VERSION + "\nMade by Leo\nFacepic credits:\n"
 								+ "\"original\" and \"solstice\" - Nightmargin, GIR and Elizavq\n"
-								+ "\"osdiscord\" - People from OneShot Discord Server\n" + "\"ninja8tyu\" - ninja8tyu.tumblr.com\n"
+								+ "\"osdiscord\" - People from OneShot Discord Server\n"
+								+ "\"ninja8tyu\" - ninja8tyu.tumblr.com\n"
 								+ "\"tehawesomestkitteh\" - tehawesomestkitteh.tumblr.com",
 						"About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE, aboutIcon);
 				break;
@@ -145,13 +148,13 @@ public class Main {
 	static class ConfirmCloseWindowListener extends WindowAdapter {
 
 		@Override
-		public void windowClosing(WindowEvent e) {
+		public void windowClosing(final WindowEvent e) {
 			Main.close();
 		}
 
 	}
 
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		if (GraphicsEnvironment.isHeadless()) {
 			System.out.println("Headless mode is enabled!\nOSTBM cannot run in headless mode!");
 			System.exit(0);
@@ -174,13 +177,13 @@ public class Main {
 		Config.init();
 		try {
 			Resources.initAppIcons();
-		} catch (IOException e1) {
+		} catch (final IOException e1) {
 			resourceError(e1);
 		}
 		LoadFrame loadFrame;
 		final String skipuc = "skipuc";
 		boolean skipucF = new File(System.getProperty("user.dir") + "/" + skipuc).exists();
-		boolean skipucR = Config.getBoolean(Config.KEY_SKIP_UPDATE_CHECK, false);
+		final boolean skipucR = Config.getBoolean(Config.KEY_SKIP_UPDATE_CHECK, false);
 		if (skipucR) {
 			Config.setBoolean(Config.KEY_SKIP_UPDATE_CHECK, false);
 			skipucF = skipucR;
@@ -199,19 +202,19 @@ public class Main {
 		try {
 			Resources.initFonts();
 			Resources.initImages();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			resourceError(e);
 		}
 		SwingUtilities.invokeLater(() -> {
 			frame = new JFrame();
-			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 			frame.addWindowListener(new ConfirmCloseWindowListener());
 			final Dimension size = new Dimension(880, 600);
 			frame.setPreferredSize(size);
 			frame.setMaximumSize(size);
 			frame.setMinimumSize(size);
 			frame.setResizable(false);
-			JMenuBar mb = createMenuBar();
+			final JMenuBar mb = createMenuBar();
 			frame.setJMenuBar(mb);
 			panel = new MakerPanel();
 			frame.add(panel);
@@ -226,46 +229,47 @@ public class Main {
 	}
 
 	private static JMenuBar createMenuBar() {
-		MenuActionListener l = new MenuActionListener();
-		JMenuBar mb = new JMenuBar();
-		JMenu mFile = new JMenu("File");
+		final MenuActionListener l = new MenuActionListener();
+		final JMenuBar mb = new JMenuBar();
+		final JMenu mFile = new JMenu("File");
 		// "File" Menu
 		mb.add(mFile);
-		JMenuItem miFileNew = new JMenuItem("New Project", Resources.getIcon(Icon.NEW_PROJECT));
+		final JMenuItem miFileNew = new JMenuItem("New Project", Resources.getIcon(Icon.NEW_PROJECT));
 		miFileNew.addActionListener(l);
 		miFileNew.setActionCommand(A_FILE_NEW);
 		mFile.add(miFileNew);
-		JMenuItem miFileLoad = new JMenuItem("Load Project", Resources.getIcon(Icon.LOAD_PROJECT));
+		final JMenuItem miFileLoad = new JMenuItem("Load Project", Resources.getIcon(Icon.LOAD_PROJECT));
 		miFileLoad.addActionListener(l);
 		miFileLoad.setActionCommand(A_FILE_LOAD);
 		mFile.add(miFileLoad);
 		mFile.addSeparator();
-		JMenuItem miFileSave = new JMenuItem("Save Project", Resources.getIcon(Icon.SAVE_PROJECT));
+		final JMenuItem miFileSave = new JMenuItem("Save Project", Resources.getIcon(Icon.SAVE_PROJECT));
 		miFileSave.addActionListener(l);
 		miFileSave.setActionCommand(A_FILE_SAVE);
 		mFile.add(miFileSave);
-		JMenuItem miFileSaveAs = new JMenuItem("Save Project As...", Resources.getIcon(Icon.SAVE_PROJECT_AS));
+		final JMenuItem miFileSaveAs = new JMenuItem("Save Project As...", Resources.getIcon(Icon.SAVE_PROJECT_AS));
 		miFileSaveAs.addActionListener(l);
 		miFileSaveAs.setActionCommand(A_FILE_SAVE_AS);
 		mFile.add(miFileSaveAs);
 		mFile.addSeparator();
-		JMenuItem miFileSettings = new JMenuItem("Settings", Resources.getIcon(Icon.SETTINGS));
+		final JMenuItem miFileSettings = new JMenuItem("Settings", Resources.getIcon(Icon.SETTINGS));
 		miFileSettings.addActionListener(l);
 		miFileSettings.setActionCommand(A_FILE_SETTINGS);
 		mFile.add(miFileSettings);
 		mFile.addSeparator();
-		JMenuItem miFileExit = new JMenuItem("Exit OBSTM", Resources.getIcon(Icon.EXIT));
+		final JMenuItem miFileExit = new JMenuItem("Exit OBSTM", Resources.getIcon(Icon.EXIT));
 		miFileExit.addActionListener(l);
 		miFileExit.setActionCommand(A_FILE_EXIT);
 		mFile.add(miFileExit);
-		JMenu mQuestion = new JMenu("Help");
+		final JMenu mQuestion = new JMenu("Help");
 		// "Help" Menu
-		JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates", Resources.getIcon(Icon.CHECK_FOR_UPDATES));
+		final JMenuItem miQuestionUpdate = new JMenuItem("Check for Updates",
+				Resources.getIcon(Icon.CHECK_FOR_UPDATES));
 		miQuestionUpdate.addActionListener(l);
 		miQuestionUpdate.setActionCommand(A_HELP_UPDATE);
 		mQuestion.add(miQuestionUpdate);
 		mQuestion.addSeparator();
-		JMenuItem miQuestionAbout = new JMenuItem("About OSTBM", Resources.getIcon(Icon.ABOUT));
+		final JMenuItem miQuestionAbout = new JMenuItem("About OSTBM", Resources.getIcon(Icon.ABOUT));
 		miQuestionAbout.addActionListener(l);
 		miQuestionAbout.setActionCommand(A_HELP_ABOUT);
 		mQuestion.add(miQuestionAbout);
@@ -277,14 +281,15 @@ public class Main {
 		if (panel.isProjectEmpty())
 			System.exit(0);
 		else {
-			int sel = JOptionPane.showConfirmDialog(panel, "Do you want to save your project before exiting OSTBM?",
-					"Save before exiting?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+			final int sel = JOptionPane.showConfirmDialog(panel,
+					"Do you want to save your project before exiting OSTBM?", "Save before exiting?",
+					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (sel == JOptionPane.CANCEL_OPTION)
 				return;
 			if (sel == JOptionPane.YES_OPTION)
 				try {
 					panel.saveProjectFile(null, false);
-				} catch (IOException e1) {
+				} catch (final IOException e1) {
 					MenuActionListener.fileError(A_FILE_SAVE, e1, "Saving project failed",
 							"Could not save project file!");
 				}
@@ -292,16 +297,17 @@ public class Main {
 		}
 	}
 
-	public static void resourceError(Throwable e) {
+	public static void resourceError(final Throwable e) {
 		if (e != null)
 			LOGGER.error("Error while loading resources!", e);
-		JOptionPane.showMessageDialog(null, "Could not load resources:" + e + "\nPlease report this error here:\n" + ISSUES_SITE,
+		JOptionPane.showMessageDialog(null,
+				"Could not load resources:" + e + "\nPlease report this error here:\n" + ISSUES_SITE,
 				"Could not load resources!", JOptionPane.ERROR_MESSAGE);
 		System.exit(1);
 	}
 
-	public static void downloadFile(String url, File dest) throws IOException {
-		URL site = new URL(url);
+	public static void downloadFile(final String url, final File dest) throws IOException {
+		final URL site = new URL(url);
 		try (InputStream siteIn = site.openStream();
 				ReadableByteChannel rbc = Channels.newChannel(siteIn);
 				FileOutputStream out = new FileOutputStream(dest)) {
@@ -309,8 +315,8 @@ public class Main {
 		}
 	}
 
-	public static boolean browseTo(String url) throws URISyntaxException, IOException {
-		URI dlSite = new URI(url);
+	public static boolean browseTo(final String url) throws URISyntaxException, IOException {
+		final URI dlSite = new URI(url);
 		if (Desktop.isDesktopSupported())
 			Desktop.getDesktop().browse(dlSite);
 		else
@@ -318,13 +324,13 @@ public class Main {
 		return true;
 	}
 
-	public static LoadFrame updateCheck(boolean disposeOfLoadFrame, boolean showUpToDate) {
-		LoadFrame loadFrame = new LoadFrame(true);
-		File verFile = new File(System.getProperty("user.dir") + "/temp.version");
+	public static LoadFrame updateCheck(final boolean disposeOfLoadFrame, final boolean showUpToDate) {
+		final LoadFrame loadFrame = new LoadFrame(true);
+		final File verFile = new File(System.getProperty("user.dir") + "/temp.version");
 		LOGGER.info("Update check: starting");
 		try {
 			downloadFile(UPDATE_CHECK_SITE, verFile);
-		} catch (IOException e1) {
+		} catch (final IOException e1) {
 			LOGGER.error("Update check failed: attempt to download caused exception", e1);
 			JOptionPane.showMessageDialog(null, "The update check has failed!\nAre you not connected to the internet?",
 					"Update check failed", JOptionPane.ERROR_MESSAGE);
@@ -332,30 +338,29 @@ public class Main {
 		if (verFile.exists()) {
 			LOGGER.info("Update check: reading version");
 			try (FileReader fr = new FileReader(verFile); BufferedReader reader = new BufferedReader(fr);) {
-				Version check = new Version(reader.readLine());
+				final Version check = new Version(reader.readLine());
 				if (VERSION.compareTo(check) < 0) {
 					LOGGER.info("Update check successful: have update");
-					JPanel panel = new JPanel();
+					final JPanel panel = new JPanel();
 					panel.setLayout(new BorderLayout());
 					panel.add(new JLabel("A new update is available: " + check), BorderLayout.PAGE_START);
 					final String defaultCl = "No changelog provided.";
 					String cl = defaultCl;
-					while (reader.ready()) {
+					while (reader.ready())
 						if (defaultCl.equals(cl))
 							cl = reader.readLine();
 						else
 							cl += "\n" + reader.readLine();
-					}
-					JTextArea chglog = new JTextArea(cl);
+					final JTextArea chglog = new JTextArea(cl);
 					chglog.setEditable(false);
 					chglog.setPreferredSize(new Dimension(800, 450));
-					JScrollPane scrollChglog = new JScrollPane(chglog);
+					final JScrollPane scrollChglog = new JScrollPane(chglog);
 					panel.add(scrollChglog, BorderLayout.CENTER);
 					panel.add(
 							new JLabel("Click \"Yes\" to go to the download site, click \"No\" to continue to OSTBM."),
 							BorderLayout.PAGE_END);
-					int result = JOptionPane.showConfirmDialog(null, panel, "New update!", JOptionPane.YES_NO_OPTION,
-							JOptionPane.PLAIN_MESSAGE);
+					final int result = JOptionPane.showConfirmDialog(null, panel, "New update!",
+							JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
 						if (!browseTo(DOWNLOAD_SITE))
 							JOptionPane.showMessageDialog(null,
@@ -366,18 +371,17 @@ public class Main {
 					}
 				} else {
 					LOGGER.info("Update check successful: up to date");
-					if (showUpToDate) {
+					if (showUpToDate)
 						JOptionPane.showMessageDialog(null,
 								"You are using the most up to date version of the OneShot Textbox Maker! Have fun!",
 								"Up to date!", JOptionPane.INFORMATION_MESSAGE);
-					}
 				}
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				LOGGER.error("Update check failed: attempt to read downloaded file caused exception", e);
 				JOptionPane.showMessageDialog(null,
 						"The update check has failed!\nAn exception occured while reading update check results:\n" + e,
 						"Update check failed", JOptionPane.ERROR_MESSAGE);
-			} catch (URISyntaxException e1) {
+			} catch (final URISyntaxException e1) {
 				LOGGER.error("Browse to download site failed: bad URI syntax", e1);
 				JOptionPane.showMessageDialog(null, "Failed to browse to the download site...",
 						"Well, this is awkward.", JOptionPane.ERROR_MESSAGE);
@@ -394,8 +398,8 @@ public class Main {
 	}
 
 	private static void openSettings() {
-		JDialog settingsFrame = new JDialog(frame, "Settings", true);
-		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		final JDialog settingsFrame = new JDialog(frame, "Settings", true);
+		settingsFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		settingsFrame.add(new SettingsPanel());
 		settingsFrame.pack();
 		settingsFrame.setLocationRelativeTo(null);

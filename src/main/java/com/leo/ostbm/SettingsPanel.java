@@ -1,7 +1,5 @@
 package com.leo.ostbm;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import javax.swing.BorderFactory;
@@ -13,43 +11,37 @@ import javax.swing.JPanel;
 public class SettingsPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	private void initGeneralPanel() {
-		JPanel generalPanel = new JPanel();
+		final JPanel generalPanel = new JPanel();
 		generalPanel.setLayout(new BoxLayout(generalPanel, BoxLayout.PAGE_AXIS));
 		generalPanel.setBorder(BorderFactory.createTitledBorder("General"));
-		JCheckBox generalCloneFace = new JCheckBox("Copy facepic from currently selected when creating new textbox",
+		final JCheckBox generalCloneFace = new JCheckBox(
+				"Copy facepic from currently selected when creating new textbox",
 				Config.getBoolean(Config.KEY_COPY_FACEPICS, true));
-		generalCloneFace.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				Config.setBoolean(Config.KEY_COPY_FACEPICS, generalCloneFace.isSelected());
-			}
-		});
+		generalCloneFace
+				.addActionListener(e -> Config.setBoolean(Config.KEY_COPY_FACEPICS, generalCloneFace.isSelected()));
 		generalPanel.add(generalCloneFace);
 		add(generalPanel);
 	}
-	
+
 	private void initSpoilerPanel() {
-		JPanel spoilerPanel = new JPanel();
+		final JPanel spoilerPanel = new JPanel();
 		spoilerPanel.setLayout(new BoxLayout(spoilerPanel, BoxLayout.PAGE_AXIS));
 		spoilerPanel.setBorder(BorderFactory.createTitledBorder("Spoilers"));
 		spoilerPanel.add(new JLabel(
 				"<html>By default, OSTBM hides facepics that are exclusive to the Solstice route to prevent spoilers.<br>Please note that changing this will reload all facepics and <b>remove all custom facepics</b>.</html>"));
-		JCheckBox solsticeFacepics = new JCheckBox("Hide Solstice facepics",
+		final JCheckBox solsticeFacepics = new JCheckBox("Hide Solstice facepics",
 				Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
-		solsticeFacepics.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				Config.setBoolean(Config.KEY_HIDE_SOLSTICE_FACES, solsticeFacepics.isSelected());
-				try {
-					MakerPanel panel = Main.getPanel();
-					panel.updateCurrentBox();
-					Resources.initFaces();
-					panel.updateFaces();
-				} catch (IOException e1) {
-					Main.resourceError(e1);
-				}
+		solsticeFacepics.addActionListener(e -> {
+			Config.setBoolean(Config.KEY_HIDE_SOLSTICE_FACES, solsticeFacepics.isSelected());
+			try {
+				final MakerPanel panel = Main.getPanel();
+				panel.updateCurrentBox();
+				Resources.initFaces();
+				panel.updateFaces();
+			} catch (final IOException e1) {
+				Main.resourceError(e1);
 			}
 		});
 		spoilerPanel.add(solsticeFacepics);

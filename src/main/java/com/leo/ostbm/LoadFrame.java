@@ -10,26 +10,27 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 
 public class LoadFrame extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 
-	private JLabel loadLabel;
+	private final JLabel loadLabel;
 
-	public void setLoadString(String loadString) {
+	public void setLoadString(final String loadString) {
 		loadLabel.setText(loadString);
 	}
 
-	public LoadFrame(String loadString, boolean important) {
-		setDefaultCloseOperation((important ? JFrame.EXIT_ON_CLOSE : JFrame.DO_NOTHING_ON_CLOSE));
+	public LoadFrame(final String loadString, final boolean important) {
+		setDefaultCloseOperation(important ? JFrame.EXIT_ON_CLOSE : WindowConstants.DO_NOTHING_ON_CLOSE);
 		setUndecorated(true);
 		final Dimension size = new Dimension(320, 120);
 		setPreferredSize(size);
 		setMaximumSize(size);
 		setMinimumSize(size);
 		setResizable(false);
-		JPanel panel = new JPanel();
+		final JPanel panel = new JPanel();
 		panel.setLayout(new BorderLayout());
 		panel.setBorder(BorderFactory.createLineBorder(MakerPanel.COLOR_TEXTBOX_B, 4));
 		panel.setBackground(MakerPanel.COLOR_TEXTBOX);
@@ -47,7 +48,7 @@ public class LoadFrame extends JFrame {
 		requestFocus();
 	}
 
-	public LoadFrame(boolean important) {
+	public LoadFrame(final boolean important) {
 		this("Checking for updates...", important);
 	}
 

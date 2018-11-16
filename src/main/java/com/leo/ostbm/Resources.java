@@ -24,13 +24,13 @@ public class Resources {
 	public static final String FACE_BLANK = "(none)";
 
 	public static class Facepic {
-		private String name;
-		private File file;
-		private BufferedImage image;
+		private final String name;
+		private final File file;
+		private final BufferedImage image;
 		private ImageIcon icon;
-		private boolean custom;
+		private final boolean custom;
 
-		public Facepic(String name, File file, BufferedImage image, boolean custom) {
+		public Facepic(final String name, final File file, final BufferedImage image, final boolean custom) {
 			this.name = name;
 			this.file = file;
 			this.image = image;
@@ -40,8 +40,8 @@ public class Resources {
 
 		private void makeIcon() {
 			final int smolSize = 48;
-			BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
-			Graphics g = imageSmol.getGraphics();
+			final BufferedImage imageSmol = new BufferedImage(smolSize, smolSize, BufferedImage.TYPE_4BYTE_ABGR);
+			final Graphics g = imageSmol.getGraphics();
 			g.drawImage(image, 0, 0, smolSize, smolSize, null);
 			icon = new ImageIcon(imageSmol, "small icon for face " + name);
 		}
@@ -71,27 +71,16 @@ public class Resources {
 	private static boolean loadingCustom;
 
 	public enum Icon {
-		NEW_PROJECT("New Project"),
-		LOAD_PROJECT("Load Project"),
-		SAVE_PROJECT("Save Project"),
-		SAVE_PROJECT_AS("Save Project As..."),
-		EXIT("Exit"),
-		CHECK_FOR_UPDATES("Check for Updates"),
-		ABOUT("About"),
-		FACE_FOLDER("Open Facepic Folder"),
-		ADD_FACE("Add Custom Facepic"),
-		ADD_TEXTBOX("Add Textbox"),
-		REMOVE_TEXTBOX("Remove Textbox"),
-		INSERT_TEXTBOX_BEFORE("Insert Textbox Before"),
-		INSERT_TEXTBOX_AFTER("Insert Textbox After"),
-		MOVE_TEXTBOX_UP("Move Textbox Up"),
-		MOVE_TEXTBOX_DOWN("Move Textbox Down"),
-		SETTINGS("Settings"),
-		CLONE_TEXTBOX("Clone Textbox");
+		NEW_PROJECT("New Project"), LOAD_PROJECT("Load Project"), SAVE_PROJECT("Save Project"),
+		SAVE_PROJECT_AS("Save Project As..."), EXIT("Exit"), CHECK_FOR_UPDATES("Check for Updates"), ABOUT("About"),
+		FACE_FOLDER("Open Facepic Folder"), ADD_FACE("Add Custom Facepic"), ADD_TEXTBOX("Add Textbox"),
+		REMOVE_TEXTBOX("Remove Textbox"), INSERT_TEXTBOX_BEFORE("Insert Textbox Before"),
+		INSERT_TEXTBOX_AFTER("Insert Textbox After"), MOVE_TEXTBOX_UP("Move Textbox Up"),
+		MOVE_TEXTBOX_DOWN("Move Textbox Down"), SETTINGS("Settings"), CLONE_TEXTBOX("Clone Textbox");
 
 		String description;
 
-		Icon(String description) {
+		Icon(final String description) {
 			this.description = description;
 		}
 
@@ -108,7 +97,7 @@ public class Resources {
 	private static Font textboxFont;
 
 	public static void checkResFolder() {
-		File resFolder = new File("res");
+		final File resFolder = new File("res");
 		if (!resFolder.exists()) {
 			JOptionPane.showMessageDialog(null,
 					"The resources folder doesn't exist!\nPlease make sure there's a \"res\" folder next to the application that contains the faces.",
@@ -119,7 +108,7 @@ public class Resources {
 
 	public static void initFonts() throws FontFormatException, IOException {
 		fontBase = Font.createFont(Font.TRUETYPE_FONT, new File("res/textboxFont.ttf"));
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		textboxFont = fontBase.deriveFont(Font.BOLD, 20);
 		ge.registerFont(textboxFont);
 	}
@@ -127,17 +116,17 @@ public class Resources {
 	public static void initAppIcons() throws IOException {
 		appIcons = new LinkedList<>();
 		final String[] sizes = new String[] { "16", "32", "64" };
-		for (String size : sizes)
+		for (final String size : sizes)
 			appIcons.add(ImageIO.read(Resources.class.getResourceAsStream("/appicon" + size + ".png")));
 	}
 
 	public static void initImages() throws IOException, URISyntaxException {
 		textboxImage = ImageIO.read(new File("res/textboxImage.png"));
 		textboxArrow = ImageIO.read(new File("res/textboxArrow.png"));
-		BufferedImage iconSheet = ImageIO.read(Resources.class.getResourceAsStream("/icons.png"));
+		final BufferedImage iconSheet = ImageIO.read(Resources.class.getResourceAsStream("/icons.png"));
 		icons = new HashMap<>();
 		int ix = 0, iy = 0;
-		for (Icon icon : Icon.values()) {
+		for (final Icon icon : Icon.values()) {
 			icons.put(icon, new ImageIcon(iconSheet.getSubimage(ix, iy, 16, 16), icon.getDescription()));
 			ix += 16;
 			if (ix == iconSheet.getWidth()) {
@@ -152,7 +141,7 @@ public class Resources {
 		loadingCustom = false;
 		faces = new HashMap<>();
 		addFace(FACE_BLANK, null, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
-		File facesFolder = new File("res/faces");
+		final File facesFolder = new File("res/faces");
 		if (!facesFolder.exists()) {
 			JOptionPane.showMessageDialog(null,
 					"The faces folder doesn't exist!\nPlease make sure there's a \"faces\" folder inside the resources folder (\"res\").",
@@ -184,7 +173,7 @@ public class Resources {
 		return appIcons;
 	}
 
-	public static ImageIcon getIcon(Icon icon) {
+	public static ImageIcon getIcon(final Icon icon) {
 		return icons.get(icon);
 	}
 
@@ -194,26 +183,26 @@ public class Resources {
 		return faces.keySet().toArray(DUMMY_STRING_ARRAY);
 	}
 
-	public static Facepic getFace(String name) {
+	public static Facepic getFace(final String name) {
 		return faces.get(name);
 	}
 
-	public static String addFace(File face) throws IOException {
+	public static String addFace(final File face) throws IOException {
 		String faceName = face.getName();
 		if (!faceName.contains(".")
 				|| !faceName.substring(faceName.lastIndexOf(".") + 1, faceName.length()).equalsIgnoreCase("png"))
 			return null;
 		faceName = faceName.substring(0, faceName.lastIndexOf('.'));
-		BufferedImage image = ImageIO.read(face);
+		final BufferedImage image = ImageIO.read(face);
 		faceName = addFace(faceName, face, image);
 		return faceName;
 	}
 
-	public static String addFace(String name, File file, BufferedImage face) {
+	public static String addFace(String name, final File file, final BufferedImage face) {
 		final int width = face.getWidth(), height = face.getHeight();
 		if ((width != 96 || height != 96) && (width != 48 || height != 48))
 			throw new IllegalArgumentException("Face dimensions must be 96 by 96 or 48 by 48!");
-		String origName = name;
+		final String origName = name;
 		int nameCount = 1;
 		while (faces.containsKey(name)) {
 			nameCount++;
@@ -223,28 +212,27 @@ public class Resources {
 		return name;
 	}
 
-	public static void addFaces(File dir, boolean ignoreSolstice) throws IOException {
+	public static void addFaces(final File dir, final boolean ignoreSolstice) throws IOException {
 		if (dir.isFile()) {
 			addFace(dir);
 			return;
 		}
-		for (File face : dir.listFiles())
+		for (final File face : dir.listFiles())
 			if (face.isDirectory()) {
 				if (ignoreSolstice) {
 					if (!"solstice".equals(face.getName()))
 						addFaces(face, false);
 				} else
 					addFaces(face, false);
-			} else {
+			} else
 				try {
 					addFace(face);
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					Main.LOGGER.error("Error while loading facepic!", e);
 					JOptionPane.showMessageDialog(null,
 							"Could not load facepic " + face.getName() + "!\n(at " + face.getAbsolutePath() + ")\n" + e,
 							"Could not load facepic!", JOptionPane.ERROR_MESSAGE);
 				}
-			}
 	}
 
 	public static void sortFaces() {

@@ -13,7 +13,7 @@ public class ModifierHelpPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	public static String colorToHTML(Color color) {
+	public static String colorToHTML(final Color color) {
 		String redStr = Integer.toHexString(color.getRed());
 		if (redStr.length() == 1)
 			redStr = "0" + redStr;
@@ -30,12 +30,12 @@ public class ModifierHelpPanel extends JPanel {
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		add(new JLabel(
-				"<html>Modifiers are formatted like so:<br /><code>\\m[parameters]</code><br />If a modifier does not need any parameters, the square brackets can be omitted.</html>"));
+				"<html>Modifiers are formatted like so:<br /><code>`m[parameters]</code><br />If a modifier does not need any parameters, the square brackets can be omitted.</html>"));
 		add(new JSeparator());
 		add(new JLabel(
 				"<html><b>\\c</b> - Changes the text color<br />3 parameters: custom RGB color (<code>[red,green,blue]</code>)<br />1 parameter: preset color OR hex color (<code>[h:RRGGBB]</code>)<br />no parameters: default color<br>Available preset colors are:</html>"));
 
-		for (Map.Entry<Integer, Color> entry : TextboxUtil.TEXTBOX_PRESET_COLORS.entrySet()) {
+		for (final Map.Entry<Integer, Color> entry : TextboxUtil.TEXTBOX_PRESET_COLORS.entrySet()) {
 			String presets = "<html><p style=\"color:";
 			presets += colorToHTML(entry.getValue()) + ";background-color:" + MakerPanel.HTMLC_TEXTBOX;
 			presets += "\">" + (entry.getKey() + 1) + " - " + TextboxUtil.TEXTBOX_PRESET_COLOR_NAMES.get(entry.getKey())
@@ -46,7 +46,8 @@ public class ModifierHelpPanel extends JPanel {
 		add(new JLabel(
 				"<html><p style=\"color:red;\"><b>ALL MODIFIERS UNDER THIS LINE ONLY WORK IN ANIMATED TEXTBOXES!</b></p></html>"));
 		add(new JSeparator());
-		add(new JLabel("<html><b>\\d[frames]</b> - Delays the text for <code>frames + text_speed</code> frames</html>"));
+		add(new JLabel(
+				"<html><b>\\d[frames]</b> - Delays the text for <code>frames + text_speed</code> frames</html>"));
 		add(new JLabel(
 				"<html><b>\\s[frames]</b> - Sets the text speed to one character per <code>frames</code> frames. Basically the same as \\d but for <i>all</i> characters</html>"));
 		add(new JLabel(
