@@ -276,13 +276,13 @@ public class TextboxUtil {
 				}
 				strippedChars[i] += modLen;
 				final TextboxModifier modObj = new TextboxModifier(modType, args);
-				Main.LOGGER.info("adding " + modObj + " to index " + modPos);
+				Main.LOGGER.trace("adding " + modObj + " to index " + modPos);
 				ret.addModifier(modPos, modObj);
 				styleSpans.add(new StyleSpan(StyleSpan.StyleType.MODIFIER, styleOff + ind - 1, modLen));
 				final String normPart = part.substring(modLen - 1);
 				modPos += normPart.length();
 				strippedBuilder.append(normPart);
-				Main.LOGGER.info("next index will be " + modPos + " (after adding " + normPart.length() + ")");
+				Main.LOGGER.trace("next index will be " + modPos + " (after adding " + normPart.length() + ")");
 				switch (modObj.type) {
 				case COLOR:
 					col = getColorModValue(modObj, Color.WHITE);
@@ -449,7 +449,7 @@ public class TextboxUtil {
 					final List<TextboxModifier> mods = tpd.mods.get(currentChar);
 					for (int j = 0; j < mods.size(); j++) {
 						final TextboxModifier mod = mods.get(j);
-						Main.LOGGER.info(i + ":" + currentChar + " - mod " + j + " is " + mod);
+						Main.LOGGER.trace(i + ":" + currentChar + " - mod " + j + " is " + mod);
 						switch (mod.type) {
 						case COLOR:
 							g.setColor(getColorModValue(mod, defaultCol));

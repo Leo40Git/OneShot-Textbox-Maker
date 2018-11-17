@@ -1,27 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
-	<Properties>
-		<Property name="pattern">%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
-	</Properties>
-	<Appenders>
-		<Console name="Console" target="SYSTEM_OUT">
-			<PatternLayout pattern="${sd:pattern}" />
-			<ThresholdFilter level="WARN" onMatch="DENY" onMismatch="ACCEPT" />
-		</Console>
-		<Console name="ConsoleErr" target="SYSTEM_ERR">
-			<PatternLayout pattern="${sd:pattern}" />
-			<ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />
-		</Console>
-		<File name="File" fileName="ostbm.log">
-			<PatternLayout pattern="${sd:pattern}" />
-			<ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />
-		</File>
-	</Appenders>
-	<Loggers>
-		<Root level="trace">
-			<AppenderRef ref="Console" />
-			<AppenderRef ref="ConsoleErr" />
-			<AppenderRef ref="File" />
-		</Root>
-	</Loggers>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+        <File name="MyFile" fileName="ostbm.log" immediateFlush="false" append="false">
+            <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="MyFile"/>
+        </Root>
+    </Loggers>
 </Configuration>
