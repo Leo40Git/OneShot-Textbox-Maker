@@ -137,39 +137,40 @@ public class TextboxUtil {
                     modLen += end;
                 }
                 strippedChars[i] += modLen;
-                boolean finalValid = true;
-                if (modType == TextboxModifier.ModType.FACE) {
-                    if (args.length > 0 && Resources.getFace(args[0]) == null) {
-                        modPos += modLen;
-                        strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
-                        styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, modLen));
-                        errors.add(new TextboxError(i,
-                                "Bad modifier argument: face \"" + args[0] + "\" does not exist"));
-                        continue;
-                    }
+                switch (modType) {
+                    case FACE:
+                        if (args.length > 0 && Resources.getFace(args[0]) == null) {
+                            modPos += modLen;
+                            strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
+                            styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, modLen));
+                            errors.add(new TextboxError(i,
+                                    "Bad modifier argument: face \"" + args[0] + "\" does not exist"));
+                            continue;
+                        }
+                        break;
+                    default:
+                        break;
                 }
-                if (finalValid) {
-                    final TextboxModifier modObj = new TextboxModifier(modType, args);
-                    Main.LOGGER.trace("adding " + modObj + " to index " + modPos);
-                    ret.addModifier(modPos, modObj);
-                    styleSpans.add(new StyleSpan(StyleSpan.StyleType.MODIFIER, styleOff + ind - 1, modLen));
-                    final String normPart = part.substring(modLen - 1);
-                    modPos += normPart.length();
-                    strippedBuilder.append(normPart);
-                    Main.LOGGER.trace("next index will be " + modPos + " (after adding " + normPart.length() + ")");
-                    switch (modObj.type) {
-                        case COLOR:
-                            col = getColorModValue(modObj, Color.WHITE);
-                            break;
-                        case FORMAT:
-                            if (modObj.args.length == 0)
-                                format = "";
-                            else
-                                format = modObj.args[0].toLowerCase();
-                            break;
-                        default:
-                            break;
-                    }
+                final TextboxModifier modObj = new TextboxModifier(modType, args);
+                Main.LOGGER.trace("adding " + modObj + " to index " + modPos);
+                ret.addModifier(modPos, modObj);
+                styleSpans.add(new StyleSpan(StyleSpan.StyleType.MODIFIER, styleOff + ind - 1, modLen));
+                final String normPart = part.substring(modLen - 1);
+                modPos += normPart.length();
+                strippedBuilder.append(normPart);
+                Main.LOGGER.trace("next index will be " + modPos + " (after adding " + normPart.length() + ")");
+                switch (modObj.type) {
+                    case COLOR:
+                        col = getColorModValue(modObj, Color.WHITE);
+                        break;
+                    case FORMAT:
+                        if (modObj.args.length == 0)
+                            format = "";
+                        else
+                            format = modObj.args[0].toLowerCase();
+                        break;
+                    default:
+                        break;
                 }
                 styleSpans.add(new StyleSpan(defType, styleOff + ind - 1 + modLen, part.length(), col, format));
             }
