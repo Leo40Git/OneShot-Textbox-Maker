@@ -11,7 +11,6 @@ import java.util.*;
 
 public class TextboxUtil {
 
-    public static final char MODIFIER_CHAR = '\\';
     public static final Map<Integer, Color> TEXTBOX_PRESET_COLORS;
     public static final Map<Integer, String> TEXTBOX_PRESET_COLOR_NAMES;
     private static final Map<Integer, ParsedTextbox> tpdCache = new HashMap<>();
@@ -56,11 +55,12 @@ public class TextboxUtil {
         int styleOff = 0, modPos = 0;
         Color col = Color.WHITE;
         String format = "";
+        boolean doubleBS = false;
         for (int i = 0; i < lines.length; i++) {
             StyleSpan.StyleType defType = StyleSpan.StyleType.NORMAL;
             if (i > 3)
                 defType = StyleSpan.StyleType.ERROR;
-            final SplitResult sp = StringUtil.split(lines[i], TextboxUtil.MODIFIER_CHAR);
+            final SplitResult sp = StringUtil.split(lines[i], '\\');
             if (sp.partCount == 0) {
                 // no mods here
                 final String line = lines[i];
@@ -79,12 +79,20 @@ public class TextboxUtil {
             for (int j = 1; j < sp.partCount; j++) {
                 final int ind = sp.partIndex[j];
                 final String part = sp.parts[j];
-                if (part.length() == 0)
+                if (part.length() == 0) {
+                    if (doubleBS) {
+                        doubleBS = false;
+                        modPos++;
+                        strippedBuilder.append('\\');
+                    }
+                    else
+                        doubleBS = true;
                     continue;
+                } else
+                    doubleBS = false;
                 final char mod = part.charAt(0);
                 if (!TextboxModifier.MOD_CHARS.containsKey(mod)) {
                     modPos += 2;
-                    strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                     styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                     errors.add(new TextboxError(i, "Unknown modifier: '" + mod + "'"));
                     continue;
@@ -95,7 +103,6 @@ public class TextboxUtil {
                 final boolean noArgs = part.indexOf('[') < 0;
                 if (!noArgsPossible && noArgs) {
                     modPos += 2;
-                    strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                     styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                     errors.add(new TextboxError(i, "Bad modifier argument number: got 0 args for modifier '" + mod
                             + "', but that modifier does not accept 0 arguments"));
@@ -107,7 +114,6 @@ public class TextboxUtil {
                     final int end = part.indexOf(']');
                     if (end < 0) {
                         modPos += 2;
-                        strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                         styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 3));
                         errors.add(new TextboxError(i,
                                 "Bad modifier format: args for modifier '" + mod + "' are never closed"));
@@ -116,7 +122,6 @@ public class TextboxUtil {
                     if (argsInd == end) {
                         if (!noArgsPossible) {
                             modPos += 2;
-                            strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                             styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                             errors.add(new TextboxError(i, "Bad modifier argument number: got 0 args for modifier '"
                                     + mod + "', but that modifier does not accept that number of arguments"));
@@ -126,7 +131,6 @@ public class TextboxUtil {
                         args = part.substring(argsInd, end).split(",");
                         if (Arrays.binarySearch(modType.argNums, args.length) < 0) {
                             modPos += 2;
-                            strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                             styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                             errors.add(new TextboxError(i,
                                     "Bad modifier argument number: got " + args.length + " args for modifier '" + mod
@@ -141,12 +145,25 @@ public class TextboxUtil {
                     case FACE:
                         if (args.length > 0 && Resources.getFace(args[0]) == null) {
                             modPos += modLen;
-                            strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                             styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, modLen));
                             errors.add(new TextboxError(i,
                                     "Bad modifier argument: face \"" + args[0] + "\" does not exist"));
                             continue;
                         }
+                        break;
+                    case CHARACTER:
+                        char val = '�';
+                        try {
+                            val = (char) Integer.parseUnsignedInt(args[0], 16);
+                        } catch (NumberFormatException e) {
+                            modPos += modLen;
+                            styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, modLen));
+                            errors.add(new TextboxError(i,
+                                    "Bad modifier argument: \"" + args[0] + "\" is not a hex value"));
+                            continue;
+                        }
+                        modPos++;
+                        strippedBuilder.append(val);
                         break;
                     default:
                         break;
@@ -549,7 +566,7 @@ public class TextboxUtil {
 
         public enum ModType {
             FACE('@', 0, 1), COLOR('c', 0, 1, 3), DELAY('d', 1), INSTANT_INTERRUPT('i'), SPEED('s', 1),
-            UNICODE_INSERT('u', 1), FORMAT('f', 0, 1);
+            CHARACTER('u', 1), FORMAT('f', 0, 1), BS_ESCAPE('\\');
 
             private char modChar;
             private int[] argNums;

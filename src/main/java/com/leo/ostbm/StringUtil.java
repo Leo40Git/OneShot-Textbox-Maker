@@ -22,7 +22,7 @@ public class StringUtil {
     }
 
     public static void main(final String[] args) {
-        final String s = "/a/bc/d";
+        final String s = "//a/bc/d";
         final SplitResult sp = split(s, '/');
         System.out.println(
                 String.format("Original string is \"%s\", split by delimiter \"/\" into %d parts", s, sp.partCount));
