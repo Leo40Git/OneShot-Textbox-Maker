@@ -17,15 +17,13 @@ public class Resources {
     public static final int APPICON_16 = 0;
     public static final int APPICON_32 = 1;
     public static final int APPICON_64 = 2;
-    static final String[] DUMMY_STRING_ARRAY = new String[]{};
+    static final String[] DUMMY_STRING_ARRAY = new String[] {};
     private static Map<String, Facepic> faces;
     private static boolean loadingCustom;
     private static List<BufferedImage> appIcons;
     private static Map<Icon, ImageIcon> icons;
     private static BufferedImage textboxImage;
     private static BufferedImage textboxArrow;
-    private static Font fontBase;
-    private static Font textboxFont;
 
     public static void checkResFolder() {
         final File resFolder = new File("res");
@@ -38,15 +36,16 @@ public class Resources {
     }
 
     public static void initFonts() throws FontFormatException, IOException {
-        fontBase = Font.createFont(Font.TRUETYPE_FONT, new File("res/textboxFont.ttf"));
-        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        textboxFont = fontBase.deriveFont(Font.BOLD, 20);
-        ge.registerFont(textboxFont);
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("res/font/font.ttf")));
+        ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("res/font/font-b.ttf")));
+        ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("res/font/font-i.ttf")));
+        ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("res/font/font-bi.ttf")));
     }
 
     public static void initAppIcons() throws IOException {
         appIcons = new LinkedList<>();
-        final String[] sizes = new String[]{"16", "32", "64"};
+        final String[] sizes = new String[] { "16", "32", "64" };
         for (final String size : sizes)
             appIcons.add(ImageIO.read(Resources.class.getResourceAsStream("/appicon" + size + ".png")));
     }
@@ -82,10 +81,6 @@ public class Resources {
         addFaces(facesFolder, Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
         sortFaces();
         loadingCustom = true;
-    }
-
-    public static Font getTextboxFont() {
-        return textboxFont;
     }
 
     public static BufferedImage getTextboxImage() {

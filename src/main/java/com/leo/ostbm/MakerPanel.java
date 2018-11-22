@@ -830,7 +830,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
                 }
             };
             setDocument(doc);
-            final Font font = Resources.getTextboxFont();
+            final Font font = new Font("Terminus (TTF)", Font.BOLD, 20);
             styleNormal = new SimpleAttributeSet();
             StyleConstants.setFontFamily(styleNormal, font.getFamily());
             StyleConstants.setFontSize(styleNormal, font.getSize());
