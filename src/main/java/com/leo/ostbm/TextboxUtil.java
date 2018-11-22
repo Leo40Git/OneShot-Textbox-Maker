@@ -11,6 +11,7 @@ import java.util.*;
 
 public class TextboxUtil {
 
+    public static final char MODIFIER_CHAR = '\\';
     public static final Map<Integer, Color> TEXTBOX_PRESET_COLORS;
     public static final Map<Integer, String> TEXTBOX_PRESET_COLOR_NAMES;
     private static final Map<Integer, ParsedTextbox> tpdCache = new HashMap<>();
@@ -59,7 +60,7 @@ public class TextboxUtil {
             StyleSpan.StyleType defType = StyleSpan.StyleType.NORMAL;
             if (i > 3)
                 defType = StyleSpan.StyleType.ERROR;
-            final SplitResult sp = StringUtil.split(lines[i], '`');
+            final SplitResult sp = StringUtil.split(lines[i], TextboxUtil.MODIFIER_CHAR);
             if (sp.partCount == 0) {
                 // no mods here
                 final String line = lines[i];
@@ -78,10 +79,12 @@ public class TextboxUtil {
             for (int j = 1; j < sp.partCount; j++) {
                 final int ind = sp.partIndex[j];
                 final String part = sp.parts[j];
+                if (part.length() == 0)
+                    continue;
                 final char mod = part.charAt(0);
                 if (!TextboxModifier.MOD_CHARS.containsKey(mod)) {
                     modPos += 2;
-                    strippedBuilder.append("`" + mod);
+                    strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                     styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                     errors.add(new TextboxError(i, "Unknown modifier: '" + mod + "'"));
                     continue;
@@ -92,7 +95,7 @@ public class TextboxUtil {
                 final boolean noArgs = part.indexOf('[') < 0;
                 if (!noArgsPossible && noArgs) {
                     modPos += 2;
-                    strippedBuilder.append("`" + mod);
+                    strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                     styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                     errors.add(new TextboxError(i, "Bad modifier argument number: got 0 args for modifier '" + mod
                             + "', but that modifier does not accept 0 arguments"));
@@ -104,7 +107,7 @@ public class TextboxUtil {
                     final int end = part.indexOf(']');
                     if (end < 0) {
                         modPos += 2;
-                        strippedBuilder.append("`" + mod);
+                        strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                         styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 3));
                         errors.add(new TextboxError(i,
                                 "Bad modifier format: args for modifier '" + mod + "' are never closed"));
@@ -113,7 +116,7 @@ public class TextboxUtil {
                     if (argsInd == end) {
                         if (!noArgsPossible) {
                             modPos += 2;
-                            strippedBuilder.append("`" + mod);
+                            strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                             styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                             errors.add(new TextboxError(i, "Bad modifier argument number: got 0 args for modifier '"
                                     + mod + "', but that modifier does not accept that number of arguments"));
@@ -123,7 +126,7 @@ public class TextboxUtil {
                         args = part.substring(argsInd, end).split(",");
                         if (Arrays.binarySearch(modType.argNums, args.length) < 0) {
                             modPos += 2;
-                            strippedBuilder.append("`" + mod);
+                            strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
                             styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
                             errors.add(new TextboxError(i,
                                     "Bad modifier argument number: got " + args.length + " args for modifier '" + mod
@@ -134,26 +137,39 @@ public class TextboxUtil {
                     modLen += end;
                 }
                 strippedChars[i] += modLen;
-                final TextboxModifier modObj = new TextboxModifier(modType, args);
-                Main.LOGGER.trace("adding " + modObj + " to index " + modPos);
-                ret.addModifier(modPos, modObj);
-                styleSpans.add(new StyleSpan(StyleSpan.StyleType.MODIFIER, styleOff + ind - 1, modLen));
-                final String normPart = part.substring(modLen - 1);
-                modPos += normPart.length();
-                strippedBuilder.append(normPart);
-                Main.LOGGER.trace("next index will be " + modPos + " (after adding " + normPart.length() + ")");
-                switch (modObj.type) {
-                    case COLOR:
-                        col = getColorModValue(modObj, Color.WHITE);
-                        break;
-                    case FORMAT:
-                        if (modObj.args.length == 0)
-                            format = "";
-                        else
-                            format = modObj.args[0].toLowerCase();
-                        break;
-                    default:
-                        break;
+                boolean finalValid = true;
+                if (modType == TextboxModifier.ModType.FACE) {
+                    if (args.length > 0 && Resources.getFace(args[0]) == null) {
+                        modPos += modLen;
+                        strippedBuilder.append(TextboxUtil.MODIFIER_CHAR + mod);
+                        styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, modLen));
+                        errors.add(new TextboxError(i,
+                                "Bad modifier argument: face \"" + args[0] + "\" does not exist"));
+                        continue;
+                    }
+                }
+                if (finalValid) {
+                    final TextboxModifier modObj = new TextboxModifier(modType, args);
+                    Main.LOGGER.trace("adding " + modObj + " to index " + modPos);
+                    ret.addModifier(modPos, modObj);
+                    styleSpans.add(new StyleSpan(StyleSpan.StyleType.MODIFIER, styleOff + ind - 1, modLen));
+                    final String normPart = part.substring(modLen - 1);
+                    modPos += normPart.length();
+                    strippedBuilder.append(normPart);
+                    Main.LOGGER.trace("next index will be " + modPos + " (after adding " + normPart.length() + ")");
+                    switch (modObj.type) {
+                        case COLOR:
+                            col = getColorModValue(modObj, Color.WHITE);
+                            break;
+                        case FORMAT:
+                            if (modObj.args.length == 0)
+                                format = "";
+                            else
+                                format = modObj.args[0].toLowerCase();
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 styleSpans.add(new StyleSpan(defType, styleOff + ind - 1 + modLen, part.length(), col, format));
             }
@@ -487,7 +503,10 @@ public class TextboxUtil {
 
         @Override
         public String toString() {
-            String t = parseTextbox(face, text).strippedText.trim();
+            final ParsedTextbox tpd = parseTextbox(face, text);
+            if (!tpd.errors.isEmpty())
+                return "(has errors)";
+            String t = tpd.strippedText.trim();
             t = t.replace('\n', ' ');
             final int maxLen = 27;
             if (t.length() > maxLen)
@@ -516,6 +535,7 @@ public class TextboxUtil {
 
         public final ModType type;
         public final String[] args;
+
         public TextboxModifier(final ModType type, final String[] args) {
             this.type = type;
             this.args = args;
@@ -535,12 +555,12 @@ public class TextboxUtil {
 
             ModType(final char modChar) {
                 this.modChar = modChar;
-                argNums = new int[]{0};
+                argNums = new int[] { 0 };
             }
 
             ModType(final char modChar, final int argNum) {
                 this.modChar = modChar;
-                argNums = new int[]{argNum};
+                argNums = new int[] { argNum };
             }
 
             ModType(final char modChar, final int... argNums) {
@@ -564,6 +584,7 @@ public class TextboxUtil {
         public final int length;
         public final Color color;
         public final String format;
+
         public StyleSpan(final StyleType type, final int pos, final int length, final Color color,
                          final String format) {
             this.type = type;

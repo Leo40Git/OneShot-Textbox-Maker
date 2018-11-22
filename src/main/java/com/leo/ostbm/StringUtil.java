@@ -1,20 +1,24 @@
 package com.leo.ostbm;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class StringUtil {
 
     public static SplitResult split(final String s, final char delim) {
-        final String[] parts = s.split(Character.toString(delim));
-        final int partCount = parts.length;
-        final int[] partPos = new int[partCount];
-        final SplitResult ret = new SplitResult(partCount, parts, partPos);
-        if (partCount == 0)
-            return ret;
-        int off = 0;
-        for (int i = 0; i < partCount; i++) {
-            partPos[i] = off;
-            off += parts[i].length() + 1;
+        List<String> arr = new ArrayList<>();
+        List<Integer> pos = new ArrayList<>();
+        int foundPosition;
+        int startIndex = 0;
+        while ((foundPosition = s.indexOf(delim, startIndex)) > -1) {
+            arr.add(s.substring(startIndex, foundPosition));
+            pos.add(startIndex);
+            startIndex = foundPosition + 1;
         }
-        return ret;
+        arr.add(s.substring(startIndex));
+        pos.add(startIndex);
+        final int size = arr.size();
+        return new SplitResult(size, arr.toArray(new String[size]), pos.stream().mapToInt(i->i).toArray());
     }
 
     public static void main(final String[] args) {
