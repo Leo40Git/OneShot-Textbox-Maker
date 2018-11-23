@@ -21,23 +21,6 @@ public class StringUtil {
         return new SplitResult(size, arr.toArray(new String[size]), pos.stream().mapToInt(i->i).toArray());
     }
 
-    public static void main(final String[] args) {
-        final String s = "//a/bc/d";
-        final SplitResult sp = split(s, '/');
-        System.out.println(
-                String.format("Original string is \"%s\", split by delimiter \"/\" into %d parts", s, sp.partCount));
-        final char[] c = new char[s.length()];
-        for (int i = 0; i < sp.partCount; i++) {
-            System.out.println(
-                    String.format("Part %d is \"%s\" (originally at index %d)", i, sp.parts[i], sp.partIndex[i]));
-            if (sp.partIndex[i] != 0)
-                c[sp.partIndex[i] - 1] = '/';
-            final char[] partC = sp.parts[i].toCharArray();
-            System.arraycopy(partC, 0, c, sp.partIndex[i], partC.length);
-        }
-        System.out.println(String.format("Reconstruction: \"%s\"", new String(c)));
-    }
-
     public static class SplitResult {
         public final int partCount;
         public final String[] parts;

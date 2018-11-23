@@ -7,6 +7,7 @@ import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
 import com.leo.ostbm.TextboxUtil.*;
 import com.leo.ostbm.util.TableColumnAdjuster;
+import sun.swing.SwingUtilities2;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -818,6 +819,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
         private final Map<Color, SimpleAttributeSet> colorStyleCache = new HashMap<>();
         public TextboxEditorPane(final MakerPanel panel, final String text) {
             super();
+            this.putClientProperty(SwingUtilities2.AA_TEXT_PROPERTY_KEY, null);
             this.panel = panel;
             setEditorKit(new TextboxEditorKit());
             final StyledDocument doc = new DefaultStyledDocument() {
@@ -890,6 +892,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
                             style = new SimpleAttributeSet(styleNormal);
                             if (span.color != null)
                                 StyleConstants.setForeground(style, span.color);
+                            StyleConstants.setBold(style, !span.format.contains("b"));
                             StyleConstants.setItalic(style, span.format.contains("i"));
                             StyleConstants.setUnderline(style, span.format.contains("u"));
                             StyleConstants.setStrikeThrough(style, span.format.contains("s"));

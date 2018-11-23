@@ -324,13 +324,17 @@ public class TextboxUtil {
                             case FORMAT:
                                 Font f = g2.getFont();
                                 final String format = mod.args.length == 0 ? "" : mod.args[0].toLowerCase();
-                                Map<TextAttribute, Object> map = new Hashtable<TextAttribute, Object>();
+                                Map<TextAttribute, Object> map = new Hashtable<>();
+                                if (format.contains("b"))
+                                    map.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_REGULAR);
+                                else
+                                    map.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
                                 if (format.contains("i")) {
                                     map.put(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE);
-                                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                                    //g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                                 } else {
                                     map.put(TextAttribute.POSTURE, -1);
-                                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+                                    //g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
                                 }
                                 if (format.contains("u"))
                                     map.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);

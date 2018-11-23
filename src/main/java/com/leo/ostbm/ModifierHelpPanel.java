@@ -26,7 +26,7 @@ public class ModifierHelpPanel extends JPanel {
         }
         add(new JLabel("Any other number will reset to the default color."));
         add(new JLabel("<html><b><code>\\f[format]</code></b> - Changes the text format<br /><code>format</code> is a string consisting of the following characters:<br/>"
-                + "<b>i</b> - <i>Italic</i><br /><b>u</b> - <u>Underline</u><br /><b>s</b> - <s>Strikethrough</s><br />"
+                + "<b>b</b> - <b>Un</b>bold (OneShot uses bold text for textboxes)<br /><b>i</b> - <i>Italic</i><br /><b>u</b> - <u>Underline</u><br /><b>s</b> - <s>Strikethrough</s><br />"
                 + "If <code>format</code> isn't specified, the text resets to its default format."));
         add(new JLabel("<html><b><code>\\u[hex]</code></b> - Inserts the Unicode character that has the hexadecimal index <code>hex</code>."));
         add(new JLabel(
