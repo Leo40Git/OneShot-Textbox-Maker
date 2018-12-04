@@ -3,3 +3,5 @@
 /build/
 *.log
 skipuc
+/.idea/
+/out/
