@@ -7,7 +7,6 @@ import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.Resources.Icon;
 import com.leo.ostbm.TextboxUtil.*;
 import com.leo.ostbm.util.TableColumnAdjuster;
-import sun.swing.SwingUtilities2;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -28,6 +27,7 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.*;
@@ -421,6 +421,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
                 ret = fc.showOpenDialog(this);
                 if (ret == JFileChooser.APPROVE_OPTION) {
                     final File[] sels = fc.getSelectedFiles();
+                    boolean loadedOne = false;
                     for (final File sel : sels) {
                         String faceName = sel.getName();
                         faceName = faceName.substring(0, faceName.lastIndexOf('.'));
@@ -429,19 +430,23 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
                             if (image.getWidth() != 96 || image.getHeight() != 96) {
                                 JOptionPane.showMessageDialog(this, "Face must be 96 by 96!", "Bad face dimensions!",
                                         JOptionPane.ERROR_MESSAGE);
-                                return;
+                                continue;
                             }
                             Resources.addFace(faceName, sel, image);
                         } catch (final IOException e1) {
                             Main.LOGGER.error("Error while loading facepic!", e1);
                             JOptionPane.showMessageDialog(this, "An exception occured while loading the facepic:\n" + e1,
                                     "Couldn't load facepic!", JOptionPane.ERROR_MESSAGE);
+                            continue;
                         }
+                        loadedOne = true;
+                    }
+                    if (loadedOne) {
+                        final String[] faces = Resources.getFaces();
+                        faceSelect.setModel(new DefaultComboBoxModel<>(faces));
+                        faceSelect.setSelectedIndex(faces.length - 1);
                     }
                 }
-                final String[] faces = Resources.getFaces();
-                faceSelect.setModel(new DefaultComboBoxModel<>(faces));
-                faceSelect.setSelectedIndex(faces.length - 1);
                 break;
             case A_ADD_BOX:
                 updateCurrentBox();
@@ -775,6 +780,28 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
     }
 
+    // sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY
+    private static final Object AA_TEXT_PROPERTY_KEY;
+
+    static {
+        Object val = null;
+        try {
+            // try to obtain value directly
+            val = sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY;
+        } catch (Exception e) {
+            Main.LOGGER.error("Failed to obtain sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY via direct access", e);
+            // use reflection
+            try {
+                Class<?> sw2Cls = Class.forName("sun.swing.SwingUtilities2");
+                Field aaFld = sw2Cls.getDeclaredField("AA_TEXT_PROPERTY_KEY");
+                val = aaFld.get(null);
+            } catch (Exception e2) {
+                Main.LOGGER.error("Failed to obtain sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY via reflection", e2);
+            }
+        }
+        AA_TEXT_PROPERTY_KEY = val;
+    }
+
     static class FacesComboBoxRenderer extends JLabel implements ListCellRenderer<String> {
 
         private static final long serialVersionUID = 1L;
@@ -819,7 +846,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
         private final Map<Color, SimpleAttributeSet> colorStyleCache = new HashMap<>();
         public TextboxEditorPane(final MakerPanel panel, final String text) {
             super();
-            this.putClientProperty(SwingUtilities2.AA_TEXT_PROPERTY_KEY, null);
+            if (AA_TEXT_PROPERTY_KEY != null)
+                this.putClientProperty(AA_TEXT_PROPERTY_KEY, null);
             this.panel = panel;
             setEditorKit(new TextboxEditorKit());
             final StyledDocument doc = new DefaultStyledDocument() {
@@ -832,7 +860,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
                 }
             };
             setDocument(doc);
-            final Font font = new Font("Terminus (TTF)", Font.BOLD, 20);
+            final Font font = new Font("Terminus", Font.BOLD, 20);
             styleNormal = new SimpleAttributeSet();
             StyleConstants.setFontFamily(styleNormal, font.getFamily());
             StyleConstants.setFontSize(styleNormal, font.getSize());

@@ -298,7 +298,7 @@ public class TextboxUtil {
 
     private static void drawTextboxString(final Graphics g, final ParsedTextbox tpd, int x, int y) {
         Graphics2D g2 = (Graphics2D) g;
-        g2.setFont(new Font("Terminus (TTF)", Font.BOLD, 20));
+        g2.setFont(new Font("Terminus", Font.BOLD, 20));
         final int startX = x;
         final Color defaultCol = g2.getColor();
         FontMetrics fm = g2.getFontMetrics();

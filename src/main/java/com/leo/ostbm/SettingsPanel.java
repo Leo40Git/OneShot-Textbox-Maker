@@ -14,16 +14,30 @@ public class SettingsPanel extends JPanel {
         initSpoilerPanel();
     }
 
+    private void reloadFacepics() {
+        try {
+            final MakerPanel panel = Main.getPanel();
+            panel.updateCurrentBox();
+            Resources.initFaces();
+            panel.updateFaces();
+        } catch (final IOException e1) {
+            Main.resourceError(e1);
+        }
+    }
+
     private void initGeneralPanel() {
         final JPanel generalPanel = new JPanel();
         generalPanel.setLayout(new BoxLayout(generalPanel, BoxLayout.PAGE_AXIS));
         generalPanel.setBorder(BorderFactory.createTitledBorder("General"));
-        final JCheckBox generalCloneFace = new JCheckBox(
+        final JCheckBox cloneFace = new JCheckBox(
                 "Copy facepic from currently selected when creating new textbox",
                 Config.getBoolean(Config.KEY_COPY_FACEPICS, true));
-        generalCloneFace
-                .addActionListener(e -> Config.setBoolean(Config.KEY_COPY_FACEPICS, generalCloneFace.isSelected()));
-        generalPanel.add(generalCloneFace);
+        cloneFace
+                .addActionListener(e -> Config.setBoolean(Config.KEY_COPY_FACEPICS, cloneFace.isSelected()));
+        generalPanel.add(cloneFace);
+        final JButton reloadFacepics = new JButton("<html>Reload facepics (<b>This will remove all custom facepics!</b>)</html>");
+        reloadFacepics.addActionListener(e -> reloadFacepics());
+        generalPanel.add(reloadFacepics);
         add(generalPanel);
     }
 
@@ -37,14 +51,7 @@ public class SettingsPanel extends JPanel {
                 Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
         solsticeFacepics.addActionListener(e -> {
             Config.setBoolean(Config.KEY_HIDE_SOLSTICE_FACES, solsticeFacepics.isSelected());
-            try {
-                final MakerPanel panel = Main.getPanel();
-                panel.updateCurrentBox();
-                Resources.initFaces();
-                panel.updateFaces();
-            } catch (final IOException e1) {
-                Main.resourceError(e1);
-            }
+            reloadFacepics();
         });
         spoilerPanel.add(solsticeFacepics);
         add(spoilerPanel);
