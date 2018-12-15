@@ -55,7 +55,7 @@ public class TextboxUtil {
         int styleOff = 0, modPos = 0;
         Color col = Color.WHITE;
         String format = "";
-        boolean doubleBS = false;
+        boolean escape = false;
         for (int i = 0; i < lines.length; i++) {
             StyleSpan.StyleType defType = StyleSpan.StyleType.NORMAL;
             if (i > 3)
@@ -72,24 +72,24 @@ public class TextboxUtil {
             final int firstLen = sp.parts[0].length();
             if (firstLen > 0) {
                 final String part = sp.parts[0];
-                modPos += part.length();
+                modPos += firstLen;
                 strippedBuilder.append(part);
-                styleSpans.add(new StyleSpan(defType, styleOff, part.length(), col, format));
+                styleSpans.add(new StyleSpan(defType, styleOff, firstLen, col, format));
             }
             for (int j = 1; j < sp.partCount; j++) {
                 final int ind = sp.partIndex[j];
                 final String part = sp.parts[j];
-                if (part.length() == 0) {
-                    if (doubleBS) {
-                        doubleBS = false;
-                        modPos++;
-                        strippedBuilder.append('\\');
-                    }
-                    else
-                        doubleBS = true;
+                if (escape) {
+                    escape = false;
+                    String partBS = "\\" + part;
+                    modPos += partBS.length();
+                    strippedBuilder.append(partBS);
+                    styleSpans.add(new StyleSpan(defType, styleOff + ind - 1, partBS.length() + 1, col, format));
                     continue;
-                } else
-                    doubleBS = false;
+                } else if (part.length() == 0) {
+                    escape = true;
+                    continue;
+                }
                 final char mod = part.charAt(0);
                 if (!TextboxModifier.MOD_CHARS.containsKey(mod)) {
                     modPos += 2;
@@ -152,7 +152,7 @@ public class TextboxUtil {
                         }
                         break;
                     case CHARACTER:
-                        char val = '�';
+                        char val;
                         try {
                             val = (char) Integer.parseUnsignedInt(args[0], 16);
                         } catch (NumberFormatException e) {
