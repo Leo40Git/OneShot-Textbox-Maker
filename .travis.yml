@@ -1,12 +1,5 @@
 language: java
-
-# Java level is 8, so test against Oracle JDK 8 and OpenJDK 8
 jdk:
-  - oraclejdk8
   - openjdk8
-
-# update Oracle JDK 8 to latest
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
+# for some reason, this refuses to work
+# - oraclejdk8
