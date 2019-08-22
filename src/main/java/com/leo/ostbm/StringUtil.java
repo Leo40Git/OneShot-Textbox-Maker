@@ -1,11 +1,16 @@
 package com.leo.ostbm;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class StringUtil {
 
-    public static SplitResult split(final String s, final char delim) {
+    @NotNull
+    @Contract("_, _ -> new")
+    public static SplitResult split(@NotNull final String s, final char delim) {
         List<String> arr = new ArrayList<>();
         List<Integer> pos = new ArrayList<>();
         int foundPosition;
@@ -26,7 +31,7 @@ public class StringUtil {
         public final String[] parts;
         public final int[] partIndex;
 
-        public SplitResult(final int partCount, final String[] parts, final int[] partPositions) {
+        public SplitResult(final int partCount, @NotNull final String[] parts, final int[] partPositions) {
             if (partCount != parts.length)
                 throw new RuntimeException("parts length does not match partCount");
             if (partCount != partPositions.length)

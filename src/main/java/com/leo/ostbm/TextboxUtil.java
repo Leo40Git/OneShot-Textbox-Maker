@@ -2,6 +2,8 @@ package com.leo.ostbm;
 
 import com.leo.ostbm.Resources.Facepic;
 import com.leo.ostbm.StringUtil.SplitResult;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.font.TextAttribute;
@@ -38,6 +40,7 @@ public class TextboxUtil {
         TEXTBOX_PRESET_COLOR_NAMES = Collections.unmodifiableMap(cnames);
     }
 
+    @Contract("_, null -> null")
     public static ParsedTextbox parseTextbox(final String face, final String text) {
         if (text == null)
             return null;
@@ -198,10 +201,9 @@ public class TextboxUtil {
         // pass 2: length of stripped lines
         styleOff = 0;
         final String[] strippedLines = ret.strippedText.split("\n");
-        final String face2 = face; // we need face for later
         for (int i = 0; i < strippedLines.length; i++) {
             int maxLen = 57;
-            final boolean hasFace = !Resources.FACE_BLANK.equals(face2);
+            final boolean hasFace = !Resources.FACE_BLANK.equals(face);
             if (hasFace)
                 maxLen -= 10;
             final int len = strippedLines[i].length();
@@ -216,11 +218,13 @@ public class TextboxUtil {
         return ret;
     }
 
+    @NotNull
     public static BufferedImage drawTextbox(final String face, final String text, final boolean drawArrow,
                                             final int arrowOffset) {
         return drawTextbox(face, parseTextbox(face, text), drawArrow, arrowOffset);
     }
 
+    @NotNull
     public static BufferedImage drawTextbox(final String face, final ParsedTextbox tpd, final boolean drawArrow,
                                             final int arrowOffset) {
         final BufferedImage ret = new BufferedImage(608, 128, BufferedImage.TYPE_INT_ARGB);
@@ -229,10 +233,12 @@ public class TextboxUtil {
         return ret;
     }
 
+    @NotNull
     public static BufferedImage drawTextbox(final String face, final String text, final boolean drawArrow) {
         return drawTextbox(face, text, drawArrow, 0);
     }
 
+    @NotNull
     public static BufferedImage drawTextbox(final String face, final ParsedTextbox tpd, final boolean drawArrow) {
         return drawTextbox(face, tpd, drawArrow, 0);
     }
@@ -242,7 +248,7 @@ public class TextboxUtil {
         drawTextbox(g, face, parseTextbox(face, text), x, y, drawArrow, arrowOffset);
     }
 
-    public static void drawTextbox(final Graphics g, final String face, final ParsedTextbox tpd, final int x,
+    public static void drawTextbox(@NotNull final Graphics g, final String face, final ParsedTextbox tpd, final int x,
                                    final int y, final boolean drawArrow, final int arrowOffset) {
         g.drawImage(Resources.getTextboxImage(), x, y, null);
         final Facepic faceObj = Resources.getFace(face);
@@ -259,7 +265,7 @@ public class TextboxUtil {
         drawTextbox(g, face, text, x, y, drawArrow, 0);
     }
 
-    private static Color getColorModValue(final TextboxModifier mod, final Color defaultColor) {
+    private static Color getColorModValue(@NotNull final TextboxModifier mod, final Color defaultColor) {
         if (mod.type != TextboxModifier.ModType.COLOR)
             return defaultColor;
         Color retColor = defaultColor;
@@ -296,7 +302,7 @@ public class TextboxUtil {
         return retColor;
     }
 
-    private static void drawTextboxString(final Graphics g, final ParsedTextbox tpd, int x, int y) {
+    private static void drawTextboxString(final Graphics g, @NotNull final ParsedTextbox tpd, int x, int y) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setFont(new Font("Terminus", Font.BOLD, 20));
         final int startX = x;
@@ -361,15 +367,16 @@ public class TextboxUtil {
         g.setColor(defaultCol);
     }
 
-    public static List<BufferedImage> makeTextboxAnimation(final List<Textbox> boxes) {
+    @NotNull
+    public static List<BufferedImage> makeTextboxAnimation(@NotNull final List<Textbox> boxes) {
         final List<BufferedImage> ret = new ArrayList<>();
         for (int i = 0; i < boxes.size(); i++) {
             final Textbox box = boxes.get(i);
             final ParsedTextbox tpd = parseTextbox(box.face, box.text);
-            final ParsedTextbox tpd2 = new ParsedTextbox(null, null, tpd.mods);
-            tpd2.strippedText = "";
             final String text = tpd.strippedText;
             String face = box.face;
+            StringBuilder textBuilder = new StringBuilder();
+            String textStorage = "";
             boolean instant = false;
             int speed = 1;
             int delay = speed;
@@ -378,11 +385,10 @@ public class TextboxUtil {
                 if (mods.get(0).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
                     instant = true;
                 else
-                    for (int j = 0; j < mods.size(); j++) {
-                        final TextboxModifier mod = mods.get(j);
+                    for (final TextboxModifier mod : mods) {
                         switch (mod.type) {
                             case DELAY:
-                                Integer newDelay = delay;
+                                int newDelay = delay;
                                 try {
                                     newDelay = Integer.parseInt(mod.args[0]);
                                     newDelay = Math.max(1, newDelay);
@@ -393,7 +399,7 @@ public class TextboxUtil {
                                 delay = newDelay + speed;
                                 break;
                             case SPEED:
-                                Integer newSpeed = speed;
+                                int newSpeed = speed;
                                 try {
                                     newSpeed = Integer.parseInt(mod.args[0]);
                                     newSpeed = Math.max(1, newSpeed);
@@ -428,7 +434,7 @@ public class TextboxUtil {
                         for (final TextboxModifier mod : mods)
                             switch (mod.type) {
                                 case DELAY:
-                                    Integer newDelay = delay;
+                                    int newDelay = delay;
                                     try {
                                         newDelay = Integer.parseInt(mod.args[0]);
                                         newDelay = Math.max(0, newDelay);
@@ -439,7 +445,7 @@ public class TextboxUtil {
                                     delay = newDelay + speed;
                                     break;
                                 case SPEED:
-                                    Integer newSpeed = speed;
+                                    int newSpeed = speed;
                                     try {
                                         newSpeed = Integer.parseInt(mod.args[0]);
                                         newSpeed = Math.max(1, newSpeed);
@@ -470,10 +476,12 @@ public class TextboxUtil {
                                     break;
                             }
                     }
-                    final char c = text.charAt(l);
-                    tpd2.strippedText += c;
+                    textBuilder.append(text.charAt(l));
+                    textStorage = tpd.strippedText;
+                    tpd.strippedText = textBuilder.toString();
                     for (int d = 0; d < delay; d++)
-                        ret.add(drawTextbox(face, tpd2, false));
+                        ret.add(drawTextbox(face, tpd, false));
+                    tpd.strippedText = textStorage;
                     delay = speed;
                 }
             }
@@ -489,9 +497,8 @@ public class TextboxUtil {
                         if (dir == 1) {
                             if (arrowOffset == 1)
                                 dir = -1;
-                        } else if (dir == -1)
-                            if (arrowOffset == -1)
-                                dir = 1;
+                        } else if (arrowOffset == -1)
+                            dir = 1;
                         final BufferedImage frame = drawTextbox(face, tpd, true, arrowOffset);
                         ret.add(frame);
                         ret.add(frame);
@@ -506,19 +513,23 @@ public class TextboxUtil {
         public String face;
         public String text;
 
+        @Contract(pure = true)
         public Textbox(final String face, final String text) {
             this.face = face;
             this.text = text;
         }
 
-        public Textbox(final Textbox other) {
+        @Contract(pure = true)
+        public Textbox(@NotNull final Textbox other) {
             this(other.face, other.text);
         }
 
+        @Contract(pure = true)
         public Textbox(final String text) {
             this(Resources.FACE_BLANK, text);
         }
 
+        @Contract(pure = true)
         public Textbox() {
             this(Resources.FACE_BLANK, "");
         }
@@ -558,6 +569,7 @@ public class TextboxUtil {
         public final ModType type;
         public final String[] args;
 
+        @Contract(pure = true)
         public TextboxModifier(final ModType type, final String[] args) {
             this.type = type;
             this.args = args;
@@ -575,25 +587,30 @@ public class TextboxUtil {
             private char modChar;
             private int[] argNums;
 
+            @Contract(pure = true)
             ModType(final char modChar) {
                 this.modChar = modChar;
                 argNums = new int[] { 0 };
             }
 
+            @Contract(pure = true)
             ModType(final char modChar, final int argNum) {
                 this.modChar = modChar;
                 argNums = new int[] { argNum };
             }
 
+            @Contract(pure = true)
             ModType(final char modChar, final int... argNums) {
                 this.modChar = modChar;
                 this.argNums = argNums;
             }
 
+            @Contract(pure = true)
             public char getModChar() {
                 return modChar;
             }
 
+            @Contract(pure = true)
             public int[] getArgumentNumbers() {
                 return argNums;
             }
@@ -607,6 +624,7 @@ public class TextboxUtil {
         public final Color color;
         public final String format;
 
+        @Contract(pure = true)
         public StyleSpan(final StyleType type, final int pos, final int length, final Color color,
                          final String format) {
             this.type = type;
@@ -616,6 +634,7 @@ public class TextboxUtil {
             this.format = format;
         }
 
+        @Contract(pure = true)
         public StyleSpan(final StyleType type, final int pos, final int length) {
             this(type, pos, length, null, null);
         }
@@ -629,6 +648,7 @@ public class TextboxUtil {
         public final int lineNum;
         public final String message;
 
+        @Contract(pure = true)
         public TextboxError(final int lineNum, final String message) {
             this.lineNum = lineNum;
             this.message = message;
@@ -641,6 +661,7 @@ public class TextboxUtil {
         public final Map<Integer, List<TextboxModifier>> mods;
         public String strippedText;
 
+        @Contract(pure = true)
         public ParsedTextbox(final List<StyleSpan> styleSpans, final List<TextboxError> errors,
                              final Map<Integer, List<TextboxModifier>> mods) {
             this.styleSpans = styleSpans;
@@ -649,11 +670,7 @@ public class TextboxUtil {
         }
 
         public void addModifier(final int pos, final TextboxModifier mod) {
-            List<TextboxModifier> list = mods.get(pos);
-            if (list == null) {
-                list = new LinkedList<>();
-                mods.put(pos, list);
-            }
+            List<TextboxModifier> list = mods.computeIfAbsent(pos, k -> new LinkedList<>());
             list.add(mod);
         }
     }

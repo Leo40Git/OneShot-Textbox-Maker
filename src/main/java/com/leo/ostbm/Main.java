@@ -3,6 +3,8 @@ package com.leo.ostbm;
 import com.leo.ostbm.Resources.Icon;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -38,10 +40,12 @@ public class Main {
     private static JFrame frame;
     private static MakerPanel panel;
 
+    @Contract(pure = true)
     public static JFrame getFrame() {
         return frame;
     }
 
+    @Contract(pure = true)
     public static MakerPanel getPanel() {
         return panel;
     }
@@ -278,7 +282,8 @@ public class Main {
                 JOptionPane.showMessageDialog(null, "Failed to browse to the download site...",
                         "Well, this is awkward.", JOptionPane.ERROR_MESSAGE);
             } finally {
-                verFile.delete();
+                if (!verFile.delete())
+                    LOGGER.warn("Could not delete file \"" + verFile.toString() + "\"");
             }
         } else
             LOGGER.error("Update check failed: downloaded file doesn't exist");
@@ -310,7 +315,7 @@ public class Main {
         }
 
         @Override
-        public void actionPerformed(final ActionEvent e) {
+        public void actionPerformed(@NotNull final ActionEvent e) {
             final String cmd = e.getActionCommand();
             switch (cmd) {
                 // "File" Menu

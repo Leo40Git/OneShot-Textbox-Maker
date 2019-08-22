@@ -137,7 +137,7 @@ public class Resources {
             addFace(dir);
             return;
         }
-        for (final File face : dir.listFiles())
+        for (final File face : Objects.requireNonNull(dir.listFiles()))
             if (face.isDirectory()) {
                 if (ignoreSolstice) {
                     if (!"solstice".equals(face.getName()))

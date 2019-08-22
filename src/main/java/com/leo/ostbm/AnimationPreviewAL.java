@@ -1,5 +1,8 @@
 package com.leo.ostbm;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
 import javax.swing.*;
@@ -21,16 +24,17 @@ public class AnimationPreviewAL implements ActionListener {
     private final byte[] animData;
     private Component parent;
 
-    public AnimationPreviewAL(final byte[] animData) {
+    @Contract(pure = true)
+    AnimationPreviewAL(final byte[] animData) {
         this.animData = animData;
     }
 
-    public void setParent(final Component parent) {
+    void setParent(final Component parent) {
         this.parent = parent;
     }
 
     @Override
-    public void actionPerformed(final ActionEvent e) {
+    public void actionPerformed(@NotNull final ActionEvent e) {
         final String cmd = e.getActionCommand();
         switch (cmd) {
             case PreviewPanel.A_SAVE_BOXES:
@@ -44,7 +48,8 @@ public class AnimationPreviewAL implements ActionListener {
                             JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                     if (confirm != JOptionPane.YES_OPTION)
                         return;
-                    sel.delete();
+                    if (!sel.delete())
+                        Main.LOGGER.warn("Could not delete file \"" + sel.toString() + "\"");
                 }
                 try (ImageOutputStream out = ImageIO.createImageOutputStream(sel)) {
                     out.write(animData);
@@ -76,7 +81,10 @@ public class AnimationPreviewAL implements ActionListener {
                             "Couldn't copy animation to clipboard!", JOptionPane.ERROR_MESSAGE);
                 }
                 try {
-                    cb.setContents(new TransferableFileList(tmp), (clipboard, contents) -> tmp.delete());
+                    cb.setContents(new TransferableFile(tmp), (clipboard, contents) -> {
+                        if (!tmp.delete())
+                            Main.LOGGER.warn("Could not delete file \"" + tmp.toString() + "\"");
+                    });
                 } catch (final IllegalStateException ex) {
                     Main.LOGGER.error("Error while copying animation to clipboard!", ex);
                     JOptionPane.showMessageDialog(parent,
@@ -93,17 +101,13 @@ public class AnimationPreviewAL implements ActionListener {
         }
     }
 
-    public static class TransferableFileList implements Transferable {
+    static class TransferableFile implements Transferable {
 
-        private final List<File> listOfFiles;
+        private final List<File> file;
 
-        public TransferableFileList(final List<File> listOfFiles) {
-            this.listOfFiles = listOfFiles;
-        }
-
-        public TransferableFileList(final File file) {
-            listOfFiles = new ArrayList<>();
-            listOfFiles.add(file);
+        TransferableFile(final File file) {
+            this.file = new ArrayList<>();
+            this.file.add(file);
         }
 
         @Override
@@ -116,10 +120,11 @@ public class AnimationPreviewAL implements ActionListener {
             return DataFlavor.javaFileListFlavor.equals(flavor);
         }
 
+        @NotNull
         @Override
-        public Object getTransferData(final DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) && listOfFiles != null)
-                return listOfFiles;
+        public Object getTransferData(@NotNull final DataFlavor flavor) throws UnsupportedFlavorException {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) && file != null)
+                return file;
             else
                 throw new UnsupportedFlavorException(flavor);
         }

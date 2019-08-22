@@ -1,5 +1,8 @@
 package com.leo.ostbm;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -21,7 +24,6 @@ public class PreviewPanel extends JPanel implements ActionListener {
     private static final long serialVersionUID = 1L;
     private final ImageIcon previewImage;
     private BufferedImage image;
-    private JButton saveButton, copyButton;
 
     public PreviewPanel(final BufferedImage image) {
         this.image = image;
@@ -45,12 +47,12 @@ public class PreviewPanel extends JPanel implements ActionListener {
         final JScrollPane previewScroll = new JScrollPane(previewPanel);
         add(previewScroll, BorderLayout.CENTER);
         final JPanel buttonPanel = new JPanel();
-        copyButton = new JButton("Copy to Clipboard");
+        JButton copyButton = new JButton("Copy to Clipboard");
         copyButton.addActionListener(l);
         copyButton.setActionCommand(A_COPY_BOXES);
         copyButton.setToolTipText("Copy this textbox (or these textboxes) to the clipboard");
         buttonPanel.add(copyButton);
-        saveButton = new JButton("Save to File");
+        JButton saveButton = new JButton("Save to File");
         saveButton.addActionListener(l);
         saveButton.setActionCommand(A_SAVE_BOXES);
         saveButton.setToolTipText("Save this textbox (or these textboxes) as an image");
@@ -60,7 +62,7 @@ public class PreviewPanel extends JPanel implements ActionListener {
     }
 
     @Override
-    public void actionPerformed(final ActionEvent e) {
+    public void actionPerformed(@NotNull final ActionEvent e) {
         final String cmd = e.getActionCommand();
         switch (cmd) {
             case A_COPY_BOXES:
@@ -94,13 +96,16 @@ public class PreviewPanel extends JPanel implements ActionListener {
                             JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                     if (confirm != JOptionPane.YES_OPTION)
                         return;
-                    sel.delete();
+                    if (!sel.delete()) {
+                        JOptionPane.showMessageDialog(this, "Could not delete file.", "Could not overwrite file", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                 }
                 try {
                     ImageIO.write(image, "png", sel);
                 } catch (final IOException ex) {
                     Main.LOGGER.error("Error while saving image!", ex);
-                    JOptionPane.showMessageDialog(this, "An exception occured while saving the image:\n" + ex,
+                    JOptionPane.showMessageDialog(this, "An exception occurred while saving the image:\n" + ex,
                             "Couldn't save image!", JOptionPane.ERROR_MESSAGE);
                     break;
                 }
@@ -116,12 +121,14 @@ public class PreviewPanel extends JPanel implements ActionListener {
 
         Image i;
 
+        @Contract(pure = true)
         public TransferableImage(final Image i) {
             this.i = i;
         }
 
+        @NotNull
         @Override
-        public Object getTransferData(final DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+        public Object getTransferData(@NotNull final DataFlavor flavor) throws UnsupportedFlavorException, IOException {
             if (flavor.equals(DataFlavor.imageFlavor) && i != null)
                 return i;
             else

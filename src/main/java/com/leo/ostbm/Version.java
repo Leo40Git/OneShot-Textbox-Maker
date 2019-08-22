@@ -1,9 +1,12 @@
 package com.leo.ostbm;
 
+import org.jetbrains.annotations.Contract;
+
 public class Version implements Comparable<Version> {
 
     private final String version;
 
+    @Contract("null -> fail")
     public Version(final String version) {
         if (version == null)
             throw new IllegalArgumentException("Version can not be null");
@@ -12,6 +15,7 @@ public class Version implements Comparable<Version> {
         this.version = version;
     }
 
+    @Contract(pure = true)
     public final String get() {
         return version;
     }
@@ -34,6 +38,7 @@ public class Version implements Comparable<Version> {
         return 0;
     }
 
+    @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(final Object that) {
         if (this == that)
