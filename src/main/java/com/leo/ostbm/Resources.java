@@ -1,5 +1,9 @@
 package com.leo.ostbm;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -83,14 +87,17 @@ public class Resources {
         loadingCustom = true;
     }
 
+    @Contract(pure = true)
     public static BufferedImage getTextboxImage() {
         return textboxImage;
     }
 
+    @Contract(pure = true)
     public static BufferedImage getTextboxArrow() {
         return textboxArrow;
     }
 
+    @Contract(pure = true)
     public static List<BufferedImage> getAppIcons() {
         return appIcons;
     }
@@ -99,6 +106,7 @@ public class Resources {
         return icons.get(icon);
     }
 
+    @NotNull
     public static String[] getFaces() {
         return faces.keySet().toArray(DUMMY_STRING_ARRAY);
     }
@@ -107,18 +115,21 @@ public class Resources {
         return faces.get(name);
     }
 
-    public static String addFace(final File face) throws IOException {
+    @Nullable
+    public static String addFace(@NotNull final File face) throws IOException {
         String faceName = face.getName();
         if (!faceName.contains(".")
                 || !faceName.substring(faceName.lastIndexOf(".") + 1).equalsIgnoreCase("png"))
             return null;
         faceName = faceName.substring(0, faceName.lastIndexOf('.'));
+        if (faces.containsKey(faceName))
+            throw new IOException("Duplicate facepic name: " + faceName);
         final BufferedImage image = ImageIO.read(face);
         faceName = addFace(faceName, face, image);
         return faceName;
     }
 
-    public static String addFace(String name, final File file, final BufferedImage face) {
+    public static String addFace(String name, final File file, @NotNull final BufferedImage face) {
         final int width = face.getWidth(), height = face.getHeight();
         if ((width != 96 || height != 96) && (width != 48 || height != 48))
             throw new IllegalArgumentException("Face dimensions must be 96 by 96 or 48 by 48!");
@@ -132,7 +143,7 @@ public class Resources {
         return name;
     }
 
-    public static void addFaces(final File dir, final boolean ignoreSolstice) throws IOException {
+    public static void addFaces(@NotNull final File dir, final boolean ignoreSolstice) throws IOException {
         if (dir.isFile()) {
             addFace(dir);
             return;
@@ -170,10 +181,12 @@ public class Resources {
 
         String description;
 
+        @Contract(pure = true)
         Icon(final String description) {
             this.description = description;
         }
 
+        @Contract(pure = true)
         public String getDescription() {
             return description;
         }

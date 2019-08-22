@@ -207,6 +207,10 @@ public class TextboxUtil {
             if (hasFace)
                 maxLen -= 10;
             final int len = strippedLines[i].length();
+            if (len == 0) {
+                styleOff++;
+                continue;
+            }
             if (len > maxLen) {
                 styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + strippedChars[i] + maxLen, len));
                 errors.add(new TextboxError(i, "Line too long: has " + len + " characters , but maximum is " + maxLen
