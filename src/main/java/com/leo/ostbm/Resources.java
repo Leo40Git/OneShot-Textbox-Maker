@@ -8,9 +8,11 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,10 +20,8 @@ import java.util.stream.Collectors;
 public class Resources {
 
     public static final String FACE_BLANK = "(none)";
-    public static final int APPICON_16 = 0;
-    public static final int APPICON_32 = 1;
-    public static final int APPICON_64 = 2;
-    static final String[] DUMMY_STRING_ARRAY = new String[] {};
+    private static final String[] DUMMY_STRING_ARRAY = new String[] {};
+    private static List<String> ignoredFaces;
     private static Map<String, Facepic> faces;
     private static boolean loadingCustom;
     private static List<BufferedImage> appIcons;
@@ -73,6 +73,26 @@ public class Resources {
 
     public static void initFaces() throws IOException {
         loadingCustom = false;
+        ignoredFaces = new ArrayList<>();
+        if (Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true)) {
+            boolean listLoaded = false;
+            final File solsticeList = new File("res/faces/solstice_facepics.txt");
+            if (solsticeList.exists()) {
+                listLoaded = true;
+                try (FileReader fr = new FileReader(solsticeList);
+                     BufferedReader br = new BufferedReader(fr)) {
+                    while (br.ready())
+                        ignoredFaces.add(br.readLine());
+                } catch (IOException e) {
+                    Main.LOGGER.warn("could not load solstice facepic list (exception while reading file)", e);
+                    ignoredFaces.clear();
+                    listLoaded = false;
+                }
+            } else
+                Main.LOGGER.warn("could not load solstice facepic list (file does not exist)");
+            if (!listLoaded)
+                JOptionPane.showMessageDialog(null, "The Solstice facepics listing (\"" + solsticeList + "\") could not be loaded!\nSolstice facepics will not be hidden!", "Could not hide Solstice facepics!", JOptionPane.WARNING_MESSAGE);
+        }
         faces = new HashMap<>();
         addFace(FACE_BLANK, null, new BufferedImage(96, 96, BufferedImage.TYPE_4BYTE_ABGR));
         final File facesFolder = new File("res/faces");
@@ -82,7 +102,7 @@ public class Resources {
                     "Faces folder doesn't exist!", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
-        addFaces(facesFolder, Config.getBoolean(Config.KEY_HIDE_SOLSTICE_FACES, true));
+        addFaces(facesFolder);
         sortFaces();
         loadingCustom = true;
     }
@@ -143,19 +163,17 @@ public class Resources {
         return name;
     }
 
-    public static void addFaces(@NotNull final File dir, final boolean ignoreSolstice) throws IOException {
+    public static void addFaces(@NotNull final File dir) throws IOException {
         if (dir.isFile()) {
             addFace(dir);
             return;
         }
         for (final File face : Objects.requireNonNull(dir.listFiles()))
-            if (face.isDirectory()) {
-                if (ignoreSolstice) {
-                    if (!"solstice".equals(face.getName()))
-                        addFaces(face, false);
-                } else
-                    addFaces(face, false);
-            } else
+            if (face.isDirectory())
+                addFaces(face);
+            else {
+                if (ignoredFaces.contains(face.getName()))
+                    continue;
                 try {
                     addFace(face);
                 } catch (final Exception e) {
@@ -164,6 +182,7 @@ public class Resources {
                             "Could not load facepic " + face.getName() + "!\n(at " + face.getAbsolutePath() + ")\n" + e,
                             "Could not load facepic!", JOptionPane.ERROR_MESSAGE);
                 }
+            }
     }
 
     public static void sortFaces() {

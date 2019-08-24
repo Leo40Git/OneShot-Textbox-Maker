@@ -361,11 +361,11 @@ public class Main {
                     break;
                 case A_HELP_ABOUT:
                     if (aboutIcon == null)
-                        aboutIcon = new ImageIcon(Resources.getAppIcons().get(Resources.APPICON_32), "About");
+                        aboutIcon = new ImageIcon(Resources.getAppIcons().get(1), "About");
                     JOptionPane.showMessageDialog(frame,
                             "<html>OneShot Textbox Maker (OSTBM) version " + VERSION + "<br/>Made by ADudeCalledLeo<br/><br/>"
                                     + "Facepic credits:<br/>"
-                                    + "    - <code>original</code>, <code>solstice</code> - NightMargin, GIR and Elizavq<br/>"
+                                    + "    - <code>original</code> - NightMargin, GIR and Elizavq<br/>"
                                     + "    - <code>osdiscord</code> - People from OneShot Discord Server<br/>"
                                     + "    - <code>ninja8tyu</code> - ninja8tyu.tumblr.com<br/>"
                                     + "    - <code>tehawesomestkitteh</code> - tehawesomestkitteh.tumblr.com"

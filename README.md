@@ -6,7 +6,8 @@ Makes OneShot textboxes. What did you expect?
 - The textbox window (`res/textboxImage.png` and `res/textboxArrow.png`) belongs to Nightmargin, GIR and Eliza.
 - The icons are part of the Silk Icons set, which is licensed under a [Creative Commons Attribution 2.5 License](https://creativecommons.org/licenses/by/2.5/) and can be found [here](http://www.famfamfam.com/lab/icons/silk/).
 - Facepic credits (folders in `res/faces`):
-    - `original` and `solstice` - Nightmargin, GIR and Eliza
+    - `original` - Nightmargin, GIR and Elizavq
     - `osdiscord` - People from OneShot Discord Server
     - `ninja8tyu` - https://ninja8tyu.tumblr.com/
     - `tehawesomestkitteh` - https://tehawesomestkitteh.tumblr.com/
+    - `adudecalledleo` - Me, obviously!
