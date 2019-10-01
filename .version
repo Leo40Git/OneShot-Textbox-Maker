@@ -1,14 +1,7 @@
-1.6.3
-Hotfix 1.6.3:
-- Added facepic from April Fools update
-- App no longer freezes when generating animated textboxes
-Hotfix 1.6.2:
-- Fix some delay-related modifier highlighting screw-ups
-- Added "clone textbox" option
-- Added option to enable/disable copying facepic from current textbox when creating new textbox
-Hotfix 1.6.1:
-- Fixed magpie_shock facepic not having Magpie's signature Facepic Background (TM).
-1.6: The Animated Update
-- ANIMATED TEXTBOXES!!!! You can now make 'em!
-- Modifier system! Have that bit of text have a different color than that other bit of text! And MORE!
-- More facepics!
+2.0
+2.0: The Unreasonably Delayed Update
+- Added a metric ton* of facepics! *amount may be off
+- Completely rewrote parsing code to be overall better!!
+- Added format modifier (italics, underline, strikethrough, unbold)
+- Added Unicode insert modifier
+- Add "reload facepics" button to settings
