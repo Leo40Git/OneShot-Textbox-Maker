@@ -66,3 +66,4 @@ silver_rip0.png
 silver_rip2.png
 silver_square1.png
 silver_square2.png
+cedric_flattered.png

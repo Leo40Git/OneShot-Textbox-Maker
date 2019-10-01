@@ -10,4 +10,6 @@ Makes OneShot textboxes. What did you expect?
     - `osdiscord` - People from OneShot Discord Server
     - `ninja8tyu` - https://ninja8tyu.tumblr.com/
     - `tehawesomestkitteh` - https://tehawesomestkitteh.tumblr.com/
+    - `struttheemo27` - https://reddit.com/u/StrutTheEmo27
+    - `theundertalefanboi` - https://reddit.com/u/TheUndertaleFanboi
     - `adudecalledleo` - Me, obviously!

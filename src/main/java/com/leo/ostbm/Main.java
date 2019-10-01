@@ -364,11 +364,13 @@ public class Main {
                         aboutIcon = new ImageIcon(Resources.getAppIcons().get(1), "About");
                     JOptionPane.showMessageDialog(frame,
                             "<html>OneShot Textbox Maker (OSTBM) version " + VERSION + "<br/>Made by ADudeCalledLeo<br/><br/>"
-                                    + "Facepic credits:<br/>"
+                                    + "Facepic credits (folders in <code>res/faces</code>):<br/>"
                                     + "    - <code>original</code> - NightMargin, GIR and Elizavq<br/>"
                                     + "    - <code>osdiscord</code> - People from OneShot Discord Server<br/>"
                                     + "    - <code>ninja8tyu</code> - ninja8tyu.tumblr.com<br/>"
                                     + "    - <code>tehawesomestkitteh</code> - tehawesomestkitteh.tumblr.com"
+                                    + "    - <code>struttheemo27</code> - reddit.com/u/StrutTheEmo27<br/>"
+                                    + "    - <code>theundertalefanboi</code> - reddit.com/u/TheUndertaleFanboi"
                                     + "    - <code>adudecalledleo</code> - Me, obviously!"
                                     + "</html>",
                             "About OneShot Textbox Maker v" + VERSION, JOptionPane.INFORMATION_MESSAGE, aboutIcon);
