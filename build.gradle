@@ -13,7 +13,9 @@ dependencies {
 	compileOnly group: 'org.jetbrains', name: 'annotations', version: '17.0.0'
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.1'
+jar {
+	manifest {
+		attributes 'Main-Class': 'com.leo.ostbm.Main'
+	}
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
-
