@@ -1,4 +1,8 @@
-2.0
+2.1
+2.1
+- Fix #4
+- Change "add custom facepic" to "add facepic to folder"
+
 2.0: The Unreasonably Delayed Update
 - Added a metric ton* of facepics! *amount may be off
 - Completely rewrote parsing code to be overall better!!
