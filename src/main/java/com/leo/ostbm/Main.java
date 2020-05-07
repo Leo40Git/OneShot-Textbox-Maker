@@ -23,7 +23,7 @@ public class Main {
 
 	public static final Logger LOGGER = LogManager.getLogger("OSTBM");
 
-	public static final Version VERSION = new Version("2.1");
+	public static final Version VERSION = new Version("2.2");
 	public static final String UPDATE_CHECK_SITE = "https://raw.githubusercontent.com/Leo40Git/OneShot-Textbox-Maker/master/.version";
 	public static final String DOWNLOAD_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/releases/latest/";
 	public static final String ISSUES_SITE = "https://github.com/Leo40Git/OneShot-Textbox-Maker/issues";
@@ -295,9 +295,10 @@ public class Main {
 	}
 
 	private static void openSettings() {
+		final SettingsPanel settingsPanel = new SettingsPanel();
 		final JDialog settingsFrame = new JDialog(frame, "Settings", true);
 		settingsFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		settingsFrame.add(new SettingsPanel());
+		settingsFrame.add(settingsPanel);
 		settingsFrame.pack();
 		settingsFrame.setLocationRelativeTo(null);
 		settingsFrame.setIconImage(Resources.getIcon(Icon.SETTINGS).getImage());

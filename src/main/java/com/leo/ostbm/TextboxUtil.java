@@ -16,6 +16,7 @@ public class TextboxUtil {
 	public static final Map<Integer, Color> TEXTBOX_PRESET_COLORS;
 	public static final Map<Integer, String> TEXTBOX_PRESET_COLOR_NAMES;
 	private static final Map<Integer, ParsedTextbox> tpdCache = new HashMap<>();
+	private static BufferedImage textboxImage;
 
 	static {
 		final Map<Integer, Color> colors = new HashMap<>();
@@ -102,7 +103,7 @@ public class TextboxUtil {
 				}
 				final TextboxModifier.ModType modType = TextboxModifier.MOD_CHARS.get(mod);
 				int modLen = 2;
-				final boolean noArgsPossible = Arrays.binarySearch(modType.argNums, 0) >= 0;
+				final boolean noArgsPossible = Arrays.binarySearch(modType.getArgumentNumbers(), 0) >= 0;
 				final boolean noArgs = part.indexOf('[') < 0;
 				if (!noArgsPossible && noArgs) {
 					modPos += 2;
@@ -132,7 +133,7 @@ public class TextboxUtil {
 						}
 					} else {
 						args = part.substring(argsInd, end).split(",");
-						if (Arrays.binarySearch(modType.argNums, args.length) < 0) {
+						if (Arrays.binarySearch(modType.getArgumentNumbers(), args.length) < 0) {
 							modPos += 2;
 							styleSpans.add(new StyleSpan(StyleSpan.StyleType.ERROR, styleOff + ind - 1, 2));
 							errors.add(new TextboxError(i,
@@ -222,6 +223,10 @@ public class TextboxUtil {
 		return ret;
 	}
 
+	public static void setTextboxImage(@NotNull BufferedImage textboxImage) {
+		TextboxUtil.textboxImage = textboxImage;
+	}
+
 	@NotNull
 	public static BufferedImage drawTextbox(final String face, final String text, final boolean drawArrow,
 	                                        final int arrowOffset) {
@@ -254,7 +259,9 @@ public class TextboxUtil {
 
 	public static void drawTextbox(@NotNull final Graphics g, final String face, final ParsedTextbox tpd, final int x,
 	                               final int y, final boolean drawArrow, final int arrowOffset) {
-		g.drawImage(Resources.getTextboxImage(), x, y, null);
+		if (textboxImage == null)
+			textboxImage = Resources.getTextboxImage();
+		g.drawImage(textboxImage, x, y, null);
 		final Facepic faceObj = Resources.getFace(face);
 		if (faceObj != null)
 			g.drawImage(faceObj.getImage(), x + 496, y + 16, null);
@@ -277,7 +284,7 @@ public class TextboxUtil {
 		if (cdata.length == 3)
 			retColor = new Color(Integer.parseInt(cdata[0]), Integer.parseInt(cdata[1]), Integer.parseInt(cdata[2]));
 		else if (cdata.length == 1) {
-			Integer preset = -1;
+			int preset;
 			try {
 				preset = Integer.parseInt(cdata[0]);
 				if (TEXTBOX_PRESET_COLORS.containsKey(preset))
@@ -373,6 +380,8 @@ public class TextboxUtil {
 
 	@NotNull
 	public static List<BufferedImage> makeTextboxAnimation(@NotNull final List<Textbox> boxes) {
+		BufferedImage oldTextboxImage = textboxImage;
+		setTextboxImage(Resources.getTextboxImageOpaque());
 		final List<BufferedImage> ret = new ArrayList<>();
 		for (int i = 0; i < boxes.size(); i++) {
 			final Textbox box = boxes.get(i);
@@ -380,7 +389,7 @@ public class TextboxUtil {
 			final String text = tpd.strippedText;
 			String face = box.face;
 			StringBuilder textBuilder = new StringBuilder();
-			String textStorage = "";
+			String textStorage;
 			boolean instant = false;
 			int speed = 1;
 			int delay = speed;
@@ -392,7 +401,7 @@ public class TextboxUtil {
 					for (final TextboxModifier mod : mods) {
 						switch (mod.type) {
 						case DELAY:
-							int newDelay = delay;
+							int newDelay;
 							try {
 								newDelay = Integer.parseInt(mod.args[0]);
 								newDelay = Math.max(1, newDelay);
@@ -403,7 +412,7 @@ public class TextboxUtil {
 							delay = newDelay + speed;
 							break;
 						case SPEED:
-							int newSpeed = speed;
+							int newSpeed;
 							try {
 								newSpeed = Integer.parseInt(mod.args[0]);
 								newSpeed = Math.max(1, newSpeed);
@@ -438,7 +447,7 @@ public class TextboxUtil {
 						for (final TextboxModifier mod : mods)
 							switch (mod.type) {
 							case DELAY:
-								int newDelay = delay;
+								int newDelay;
 								try {
 									newDelay = Integer.parseInt(mod.args[0]);
 									newDelay = Math.max(0, newDelay);
@@ -449,7 +458,7 @@ public class TextboxUtil {
 								delay = newDelay + speed;
 								break;
 							case SPEED:
-								int newSpeed = speed;
+								int newSpeed;
 								try {
 									newSpeed = Integer.parseInt(mod.args[0]);
 									newSpeed = Math.max(1, newSpeed);
@@ -510,6 +519,7 @@ public class TextboxUtil {
 					}
 				}
 		}
+		setTextboxImage(oldTextboxImage);
 		return ret;
 	}
 
@@ -526,11 +536,6 @@ public class TextboxUtil {
 		@Contract(pure = true)
 		public Textbox(@NotNull final Textbox other) {
 			this(other.face, other.text);
-		}
-
-		@Contract(pure = true)
-		public Textbox(final String text) {
-			this(Resources.FACE_BLANK, text);
 		}
 
 		@Contract(pure = true)
@@ -594,8 +599,8 @@ public class TextboxUtil {
 			FORMAT('f', 0, 1),
 			BS_ESCAPE('\\');
 
-			private char modChar;
-			private int[] argNums;
+			private final char modChar;
+			private final int[] argNums;
 
 			@Contract(pure = true)
 			ModType(final char modChar) {

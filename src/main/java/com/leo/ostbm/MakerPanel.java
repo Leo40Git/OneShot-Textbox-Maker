@@ -28,11 +28,7 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
@@ -42,7 +38,7 @@ import static com.leo.ostbm.TextboxUtil.*;
 public class MakerPanel extends JPanel implements ActionListener, ListSelectionListener, ItemListener {
 
 	public static final FileNameExtensionFilter TBPROJ_FILTER = new FileNameExtensionFilter("Project files", "tbproj");
-	public static final Color COLOR_TEXTBOX = Color.decode("0x180C1E");
+	public static final Color COLOR_TEXTBOX = new Color(24, 12, 30);
 	public static final Color COLOR_TEXTBOX_B = COLOR_TEXTBOX.brighter().brighter();
 	public static final String HTMLC_TEXTBOX = ModifierHelpPanel.colorToHTML(COLOR_TEXTBOX);
 	public static final String A_FACE_FOLDER = "faceFolder";
@@ -58,27 +54,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 	public static final String A_MAKE_BOXES = "makeBoxes";
 	public static final String A_MAKE_BOXES_ANIM = "makeBoxesAnim";
 	private static final long serialVersionUID = 1L;
-	// sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY
-	private static final Object AA_TEXT_PROPERTY_KEY;
-
-	static {
-		Object val = null;
-		try {
-			// try to obtain value directly
-			val = sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY;
-		} catch (Exception e) {
-			Main.LOGGER.error("Failed to obtain sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY via direct access", e);
-			// use reflection
-			try {
-				Class<?> sw2Cls = Class.forName("sun.swing.SwingUtilities2");
-				Field aaFld = sw2Cls.getDeclaredField("AA_TEXT_PROPERTY_KEY");
-				val = aaFld.get(null);
-			} catch (Exception e2) {
-				Main.LOGGER.error("Failed to obtain sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY via reflection", e2);
-			}
-		}
-		AA_TEXT_PROPERTY_KEY = val;
-	}
 
 	private final List<Textbox> boxes;
 	private File projectFile;
@@ -272,10 +247,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 		return emptyProject;
 	}
 
-	public File getProjectFile() {
-		return projectFile;
-	}
-
 	public void newProjectFile() throws IOException {
 		updateCurrentBox();
 		if (!isProjectEmpty()) {
@@ -379,14 +350,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			updateBoxList();
 			projectFile = src;
 		}
-	}
-
-	public List<Textbox> getBoxes() {
-		return new LinkedList<>(boxes);
-	}
-
-	public int getCurrentBox() {
-		return currentBox;
 	}
 
 	@Override
@@ -542,6 +505,10 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				return;
 			gf = new LoadFrame("Generating textbox(es)...", false);
 			SwingUtilities.invokeLater(() -> {
+				if (Config.getBoolean(Config.KEY_OPAQUE_TEXTBOXES, false))
+					TextboxUtil.setTextboxImage(Resources.getTextboxImageOpaque());
+				else
+					TextboxUtil.setTextboxImage(Resources.getTextboxImage());
 				for (int i = 0; i < boxes.size(); i++) {
 					final Textbox b = boxes.get(i);
 					drawTextbox(big, b.face, b.text, 0, 130 * i, i < boxes.size() - 1);
@@ -549,14 +516,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				gf.dispose();
 				final JDialog previewFrame = new JDialog(parent, "Textbox(es) preview", true);
 				previewFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-				final int extraHeight = 82;
-				final Dimension size = new Dimension(652, boxesImage.getHeight() + extraHeight);
-				final int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
-				if (size.height > maxHeight)
-					size.height = maxHeight + 16;
-				previewFrame.setMinimumSize(size);
-				previewFrame.setPreferredSize(size);
-				previewFrame.setMaximumSize(size);
 				previewFrame.setResizable(false);
 				previewFrame.add(new PreviewPanel(boxesImage));
 				previewFrame.pack();
@@ -570,8 +529,8 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				return;
 			gf = new LoadFrame("Generating textbox(es)...", false);
 			SwingUtilities.invokeLater(() -> {
-				byte[] data = null;
-				Image image = null;
+				byte[] data;
+				Image image;
 				final List<BufferedImage> boxFrames = makeTextboxAnimation(boxes);
 				try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				     ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
@@ -617,14 +576,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				final ImageIcon preview = new ImageIcon(image);
 				final JDialog previewFrame = new JDialog(parent, "Textbox(es) preview", true);
 				previewFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-				final int extraHeight = 82;
-				final Dimension size = new Dimension(652, Resources.getTextboxImage().getHeight() + extraHeight);
-				final int maxHeight = 128 * 5 + 2 * 4 + extraHeight;
-				if (size.height > maxHeight)
-					size.height = maxHeight + 16;
-				previewFrame.setMinimumSize(size);
-				previewFrame.setPreferredSize(size);
-				previewFrame.setMaximumSize(size);
 				previewFrame.setResizable(false);
 				AnimationPreviewAL al;
 				final PreviewPanel previewPanel = new PreviewPanel(preview, al = new AnimationPreviewAL(data));
@@ -818,8 +769,6 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 
 		public TextboxEditorPane(final MakerPanel panel, final String text) {
 			super();
-			if (AA_TEXT_PROPERTY_KEY != null)
-				this.putClientProperty(AA_TEXT_PROPERTY_KEY, null);
 			this.panel = panel;
 			setEditorKit(new TextboxEditorKit());
 			final StyledDocument doc = new DefaultStyledDocument() {
@@ -865,6 +814,13 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 			highlight();
 		}
 
+		@Override
+		public void paint(Graphics g) {
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+			super.paint(g2d);
+		}
+
 		private void highlight() {
 			final Document doc = getDocument();
 			if (doc instanceof StyledDocument) {
@@ -879,27 +835,29 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 				} catch (final BadLocationException e) {
 					Main.LOGGER.catching(e);
 				}
-				for (final StyleSpan span : tpd.styleSpans) {
-					switch (span.type) {
-					case ERROR:
-						style = styleOver;
-						break;
-					case MODIFIER:
-						style = styleMod;
-						break;
-					case NORMAL:
-						style = new SimpleAttributeSet(styleNormal);
-						if (span.color != null)
-							StyleConstants.setForeground(style, span.color);
-						StyleConstants.setBold(style, !span.format.contains("b"));
-						StyleConstants.setItalic(style, span.format.contains("i"));
-						StyleConstants.setUnderline(style, span.format.contains("u"));
-						StyleConstants.setStrikeThrough(style, span.format.contains("s"));
-						break;
-					default:
-						break;
+				if (tpd != null) {
+					for (final StyleSpan span : tpd.styleSpans) {
+						switch (span.type) {
+							case ERROR:
+								style = styleOver;
+								break;
+							case MODIFIER:
+								style = styleMod;
+								break;
+							case NORMAL:
+								style = new SimpleAttributeSet(styleNormal);
+								if (span.color != null)
+									StyleConstants.setForeground(style, span.color);
+								StyleConstants.setBold(style, !span.format.contains("b"));
+								StyleConstants.setItalic(style, span.format.contains("i"));
+								StyleConstants.setUnderline(style, span.format.contains("u"));
+								StyleConstants.setStrikeThrough(style, span.format.contains("s"));
+								break;
+							default:
+								break;
+						}
+						stylDoc.setCharacterAttributes(span.pos, span.length, style, true);
 					}
-					stylDoc.setCharacterAttributes(span.pos, span.length, style, true);
 				}
 			}
 		}

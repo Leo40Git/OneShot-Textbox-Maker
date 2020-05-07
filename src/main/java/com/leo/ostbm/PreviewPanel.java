@@ -118,7 +118,6 @@ public class PreviewPanel extends JPanel implements ActionListener {
 	}
 
 	public static class TransferableImage implements Transferable {
-
 		Image i;
 
 		@Contract(pure = true)

@@ -10,6 +10,7 @@ public class Config {
 	public static final String KEY_SKIP_UPDATE_CHECK = "skip_update_check";
 	public static final String KEY_HIDE_SOLSTICE_FACES = "hide_solstice_faces";
 	public static final String KEY_COPY_FACEPICS = "copy_facepics";
+	public static final String KEY_OPAQUE_TEXTBOXES = "opaque_textboxes";
 	private static Preferences config;
 
 	private Config() {

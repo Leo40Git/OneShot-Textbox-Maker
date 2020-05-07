@@ -10,7 +10,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URISyntaxException;
-import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,6 +23,7 @@ public class Resources {
 	private static List<BufferedImage> appIcons;
 	private static Map<Icon, ImageIcon> icons;
 	private static BufferedImage textboxImage;
+	private static BufferedImage textboxImageOpaque;
 	private static BufferedImage textboxArrow;
 
 	public static void checkResFolder() {
@@ -53,6 +53,7 @@ public class Resources {
 
 	public static void initImages() throws IOException, URISyntaxException {
 		textboxImage = ImageIO.read(new File("res/textboxImage.png"));
+		textboxImageOpaque = ImageIO.read(new File("res/textboxImageOpaque.png"));
 		textboxArrow = ImageIO.read(new File("res/textboxArrow.png"));
 		final BufferedImage iconSheet = ImageIO.read(Resources.class.getResourceAsStream("/icons.png"));
 		icons = new HashMap<>();
@@ -105,6 +106,11 @@ public class Resources {
 	@Contract(pure = true)
 	public static BufferedImage getTextboxImage() {
 		return textboxImage;
+	}
+
+	@Contract(pure = true)
+	public static BufferedImage getTextboxImageOpaque() {
+		return textboxImageOpaque;
 	}
 
 	@Contract(pure = true)
