@@ -1,6 +1,9 @@
+2.2.1
+2.2.1
+- Fix instant modifier not working
+
 2.2
-2.2
-- Fix crashing on Java 10+ (closes #5)
+- Fix crashing on Java 10+
 - Textbox background is now translucent like it is in the actual game
   (behavior can be disabled,
    animated textboxes always use opaque version)
