@@ -543,7 +543,7 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
                         final IIOMetadataNode graphicsControl = getNode(root, "GraphicControlExtension");
                         graphicsControl.setAttribute("disposalMethod", "none");
                         graphicsControl.setAttribute("userInputFlag", "FALSE");
-                        graphicsControl.setAttribute("transparentColorFlag", "TRUE");
+                        graphicsControl.setAttribute("transparentColorFlag", "FALSE");
                         graphicsControl.setAttribute("transparentColorIndex", "0");
                         graphicsControl.setAttribute("delayTime", "5");
                         final IIOMetadataNode comments = getNode(root, "CommentExtensions");
