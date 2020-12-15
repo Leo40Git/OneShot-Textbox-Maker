@@ -16,7 +16,7 @@ public class TextboxUtil {
 	public static final Map<Integer, Color> TEXTBOX_PRESET_COLORS;
 	public static final Map<Integer, String> TEXTBOX_PRESET_COLOR_NAMES;
 	private static final Map<Integer, ParsedTextbox> tpdCache = new HashMap<>();
-	private static BufferedImage textboxImage;
+	private static BufferedImage textboxImage = Resources.getTextboxImage();
 
 	static {
 		final Map<Integer, Color> colors = new HashMap<>();
@@ -428,8 +428,8 @@ public class TextboxUtil {
 					}
 			}
 			boolean endsWithInterrupt = false;
-			if (tpd.mods.containsKey(text.length())) {
-				final List<TextboxModifier> mods = tpd.mods.get(text.length());
+			if (tpd.mods.containsKey(text.length() - 1)) {
+				final List<TextboxModifier> mods = tpd.mods.get(text.length() - 1);
 				if (mods.get(mods.size() - 1).type == TextboxModifier.ModType.INSTANT_INTERRUPT)
 					endsWithInterrupt = true;
 			}

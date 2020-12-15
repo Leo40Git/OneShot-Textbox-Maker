@@ -543,12 +543,13 @@ public class MakerPanel extends JPanel implements ActionListener, ListSelectionL
 					final IIOMetadataNode graphicsControl = getNode(root, "GraphicControlExtension");
 					graphicsControl.setAttribute("disposalMethod", "none");
 					graphicsControl.setAttribute("userInputFlag", "FALSE");
-					graphicsControl.setAttribute("transparentColorFlag", "FALSE");
-					graphicsControl.setAttribute("delayTime", "5");
+					graphicsControl.setAttribute("transparentColorFlag", "TRUE");
 					graphicsControl.setAttribute("transparentColorIndex", "0");
+					graphicsControl.setAttribute("delayTime", "5");
 					final IIOMetadataNode comments = getNode(root, "CommentExtensions");
 					comments.setAttribute("CommentExtension",
-							"Animated OneShot-style textbox, generated using OneShot Textbox Maker by Leo\nhttps://github.com/Leo40Git/OneShot-Textbox-Maker");
+							"Animated OneShot-style textbox, generated using OneShot Textbox Maker by Leo\n" +
+									"https://github.com/Leo40Git/OneShot-Textbox-Maker");
 					final IIOMetadataNode application = getNode(root, "ApplicationExtensions");
 					final IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
 					child.setAttribute("applicationID", "NETSCAPE");
