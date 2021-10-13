@@ -150,10 +150,14 @@ public class Resources {
         return faceName;
     }
 
-    public static String addFace(String name, final File file, @NotNull final BufferedImage face) {
+    public static void checkFace(@NotNull final BufferedImage face) {
         final int width = face.getWidth(), height = face.getHeight();
         if ((width != 96 || height != 96) && (width != 48 || height != 48))
             throw new IllegalArgumentException("Face dimensions must be 96 by 96 or 48 by 48!");
+    }
+
+    public static String addFace(String name, final File file, @NotNull final BufferedImage face) {
+        checkFace(face);
         final String origName = name;
         int nameCount = 1;
         while (faces.containsKey(name)) {
@@ -187,6 +191,7 @@ public class Resources {
     }
 
     public static void addCustomFace(String name, final File file, @NotNull final BufferedImage face) throws IOException {
+        checkFace(face);
         File customDir = new File("res/faces/custom");
         if (!customDir.exists()) {
             if (!customDir.mkdirs())
