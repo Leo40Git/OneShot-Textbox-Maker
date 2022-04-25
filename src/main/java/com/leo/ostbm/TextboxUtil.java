@@ -197,6 +197,7 @@ public class TextboxUtil {
             }
             strippedBuilder.append('\n');
             styleOff += lines[i].length() + 1;
+            modPos++;
         }
         ret.strippedText = strippedBuilder.toString();
         // pass 2: length of stripped lines
